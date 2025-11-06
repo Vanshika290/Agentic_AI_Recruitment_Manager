@@ -25,3 +25,20 @@ Interview Schedular Agent
    │ (JSON/DB)   │                 │ (email / console)│
    └──────────────┘                 └──────────────────┘
 
+
+   Structure of folder:
+
+     Agentic_AI/
+├── app/
+│   ├── __init__.py
+│   ├── database.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── models.py
+│   └── services/
+│       ├── __init__.py
+│       └── calendar_service.py
+├── scripts/
+│   └── seed_data.py
+└── main.py
+
