@@ -2,28 +2,28 @@
 
 Interview Schedular Agent
 
-                ┌──────────────────────┐
-                │   User Interface     │
-                │ (CLI / Web / Chatbot)│
-                └──────────┬───────────┘
-                           │
-                 ┌─────────▼─────────┐
-                 │  Agent Controller │
-                 │ (Decision Manager)│
-                 └─────────┬─────────┘
-                           │
-          ┌────────────────┴────────────────┐
-          │                                 │
-┌─────────▼──────────┐             ┌────────▼─────────┐
-│  Llama Reasoning AI│             │ Scheduler Engine │
-│  (Natural language │             │ (finds free slot)│
-│   & decision logic)│             └────────┬─────────┘
-└─────────┬──────────┘                      │
-          │                                 │
-   ┌──────▼──────┐                 ┌────────▼─────────┐
-   │ Data Storage│                 │ Communication Tool│
-   │ (JSON/DB)   │                 │ (email / console)│
-   └──────────────┘                 └──────────────────┘
+The Interview Scheduler Backend is a RESTful API service designed to manage and automate interview scheduling between candidates and recruiters.
+It handles user data, interview slots, scheduling logic, and notification management efficiently.
+
+This backend can easily integrate with a frontend (like React, Vue, or HTML/JS) to provide a complete interview management system.
+
+🚀 Features
+
+👤 User Management (Candidates & Recruiters)
+
+📅 Interview Creation & Scheduling
+
+🔄 Update or Reschedule Interviews
+
+🗑️ Cancel/Delete Interviews
+
+🔍 Fetch All Scheduled Interviews
+
+⏰ Availability Management
+
+📧 Email Notification Integration (optional)
+
+🧩 Database Integration (SQLite/MySQL/PostgreSQL)
 
 
    Structure of folder:
