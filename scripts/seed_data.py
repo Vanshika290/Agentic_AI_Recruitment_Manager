@@ -19,6 +19,8 @@ def seed_test_data():
     
     # Create database engine
     engine = create_engine(DATABASE_URL)
+    # Ensure tables exist
+    Base.metadata.create_all(bind=engine)
     
     # Create session
     session = Session(engine)
