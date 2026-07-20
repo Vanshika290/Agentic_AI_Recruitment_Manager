@@ -1,73 +1,133 @@
-# Agentic AI Recruitment Manager
-_AI-powered recruitment manager with RAG-based candidate matching, multi-agent orchestration, and calendar/email automation._
+# 🤖 Agentic AI Recruitment Manager
 
-Project that indexes candidate resumes, embeds them locally, and provides a retrieval API with optional LLM explanations.
+**An AI-powered recruitment automation platform** — combining Retrieval-Augmented Generation (RAG) for intelligent candidate matching with agentic workflow orchestration for end-to-end interview scheduling, calendar sync, and email notifications.
 
-**Architecture**
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://agentic-ai-recruitment-manager.vercel.app/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector%20Store-orange?style=for-the-badge)](https://www.trychroma.com/)
 
-mermaid
+**🔗 Live Demo:** https://agentic-ai-recruitment-manager.vercel.app/
+
+---
+
+## 📌 What This Project Does
+
+Recruitment teams waste hours manually screening resumes and coordinating interview logistics. This project automates both halves of that problem:
+
+| Module | What it solves |
+|---|---|
+| 🔍 **RAG Candidate Matcher** | Semantically searches resumes against a job description — no keyword matching, actual meaning-based retrieval |
+| 📅 **Interview Scheduling Engine** | Manages candidates, recruiters, interview slots, and availability end-to-end |
+| 📧 **Notification Layer** | Auto-generates and sends personalized interview invites via email |
+| 🗓️ **Calendar Integration** | Syncs scheduled interviews directly to Google Calendar with OAuth |
+
+---
+
+## 🏗️ Architecture
+
+### RAG Candidate Matching Pipeline
+
+```mermaid
 flowchart LR
-    A[Candidate Ingestion] --> B[Embedding (sentence-transformers)]
-    B --> C[ChromaDB (local, persist)]
-    D[Job Description / Query] --> E[Embed Query]
+    A[Candidate Resumes] --> B[Local Embedding<br/>sentence-transformers]
+    B --> C[(ChromaDB<br/>Vector Store)]
+    D[Job Description Query] --> E[Embed Query]
     E --> C
-    C --> F[Retrieve Top-K Candidates]
-    F --> G[LLM Explanation (OpenAI) - optional]
+    C --> F[Retrieve Top-K<br/>Candidates]
+    F --> G{OpenAI Key<br/>Available?}
+    G -->|Yes| H[LLM-Generated<br/>Match Explanation]
+    G -->|No| I[Similarity Score<br/>Only]
+```
 
+### Interview Scheduling Workflow
 
-**Tech stack**
+```mermaid
+flowchart LR
+    A[Candidate + Recruiter<br/>Records Created] --> B[Interview Entry<br/>Saved to DB]
+    B --> C[Conflict Check<br/>Against Existing Events]
+    C --> D[Google Calendar<br/>Event Created]
+    D --> E[Email Invite<br/>Sent to Candidate]
+    E --> F[Final State<br/>Persisted]
+```
 
-- FastAPI — API server and auto `/docs`
-- sentence-transformers (`all-MiniLM-L6-v2`) — local embeddings
-- ChromaDB (`chromadb`) — local vector store (persisted to `chroma_db/`)
-- OpenAI (`openai`) — optional LLM explanations (requires `OPENAI_API_KEY`)
-- SQLAlchemy + SQLite — application DB (`interview_scheduler.db`)
-- Google Calendar API (credentials via `credentials.json` / `token.json`)
-- SMTP / email utilities
+---
 
-**Quick setup**
+## 🧰 Tech Stack
 
-1. Create and activate a Python venv, then install requirements:
+| Layer | Technology |
+|---|---|
+| **API Framework** | FastAPI (with auto-generated Swagger docs at `/docs`) |
+| **Embeddings** | `sentence-transformers` (`all-MiniLM-L6-v2`) — runs fully local, no API key required |
+| **Vector Database** | ChromaDB (persisted locally to `chroma_db/`) |
+| **LLM (optional)** | OpenAI — generates natural-language match explanations |
+| **Database** | SQLAlchemy + SQLite |
+| **Calendar Integration** | Google Calendar API (OAuth 2.0) |
+| **Notifications** | SMTP-based email service |
+| **Deployment** | Vercel |
+
+---
+
+## ✨ Key Engineering Decisions
+
+- **Local-first embeddings** — chose `sentence-transformers` over OpenAI embeddings so the system is fully self-contained and runs without any API costs or external dependency for its core retrieval function.
+- **Graceful degradation** — if `OPENAI_API_KEY` isn't set, the system doesn't break; it simply returns similarity-ranked candidates without the LLM explanation layer.
+- **Modular service architecture** — data layer, database layer, and service layer (calendar, email, RAG) are cleanly separated for maintainability and future extension.
+- **Persisted vector index** — Chroma index survives restarts, so candidate embeddings don't need to be rebuilt on every run.
+
+---
+
+## 🚀 Quick Start
 
 ```bash
+# 1. Clone and set up environment
+git clone https://github.com/Vanshika290/Agentic_AI_Recruitment_Manager.git
+cd Agentic_AI_Recruitment_Manager
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\activate        # Windows
 pip install -r requirements.txt
-```
 
-2. Seed the database (creates tables + sample data):
-
-```bash
+# 2. Seed the database with sample data
 python scripts/seed_data.py
-```
 
-3. Build the local vector index (persists to `chroma_db/`):
-
-```bash
+# 3. Build the local vector index from candidate resumes
 python scripts/build_vector_index.py
-```
 
-4. Run the API server locally:
-
-```bash
+# 4. Run the API server
 uvicorn app.api.rag_api:app --reload --port 8000
 ```
 
-**Environment variables**
+Then visit **`http://localhost:8000/docs`** for the interactive Swagger UI.
 
-- `OPENAI_API_KEY` — optional; if missing the system returns similarity-only results and explanations will be `null`.
-- `OPENAI_MODEL` — optional; default `gpt-3.5-turbo`.
-- `GOOGLE_CREDENTIALS` / `token.json` — used for Google Calendar integration (keep `token.json` private).
+---
 
-**API endpoints**
+## 🔑 Environment Variables
 
-- `POST /rag/search` — body: `{ "query": "<job description>", "top_k": 5 }`
+| Variable | Required? | Purpose |
+|---|---|---|
+| `OPENAI_API_KEY` | Optional | Enables LLM-generated match explanations. Without it, similarity-only results are returned. |
+| `OPENAI_MODEL` | Optional | Defaults to `gpt-3.5-turbo` |
+| `GOOGLE_CREDENTIALS` / `token.json` | Optional | Required only for Google Calendar sync |
 
-Example response (when `OPENAI_API_KEY` is missing):
+---
 
+## 📡 API Reference
+
+### `POST /rag/search`
+Search candidates semantically against a job description.
+
+**Request:**
 ```json
 {
-  "query": "Python backend engineer with FastAPI",
+  "query": "Python backend engineer with FastAPI experience",
+  "top_k": 5
+}
+```
+
+**Response:**
+```json
+{
+  "query": "Python backend engineer with FastAPI experience",
   "results": [
     {
       "id": "cand_2",
@@ -79,59 +139,58 @@ Example response (when `OPENAI_API_KEY` is missing):
   ]
 }
 ```
+> `explanation` is `null` when `OPENAI_API_KEY` is not configured — the system still returns valid ranked results.
 
-- `POST /rag/rebuild` — rebuilds the Chroma index from the SQL DB. Returns `{ "status": "ok", "indexed": <n> }` on success.
+### `POST /rag/rebuild`
+Rebuilds the Chroma vector index from the current SQL database.
 
-**Notes / safety**
+**Response:**
+```json
+{ "status": "ok", "indexed": 12 }
+```
 
-- The project persists the Chroma DB under `chroma_db/`. Ensure this directory is in `.gitignore` (already present) before committing.
-- `token.json` contains OAuth tokens for Google; never commit it. It's ignored by `.gitignore`.
-- Explanations are optional — if the OpenAI key is not configured the API will still return candidate matches.
+---
 
-If you'd like, I can also prepare a short PR message and the exact `git` commands to push these changes to GitHub.
-# Agentic_AI_Recruitment_Manager
+## 📁 Project Structure
 
-Live Demo 👉 https://agentic-ai-recruitment-manager.vercel.app/
-
-Interview Schedular Agent
-
-The Interview Scheduler Backend is a RESTful API service designed to manage and automate interview scheduling between candidates and recruiters.
-It handles user data, interview slots, scheduling logic, and notification management efficiently.
-
-This backend can easily integrate with a frontend (like React, Vue, or HTML/JS) to provide a complete interview management system.
-
-🚀 Features
-
-👤 User Management (Candidates & Recruiters)
-
-📅 Interview Creation & Scheduling
-
-🔄 Update or Reschedule Interviews
-
-🗑️ Cancel/Delete Interviews
-
-🔍 Fetch All Scheduled Interviews
-
-⏰ Availability Management
-
-📧 Email Notification Integration (optional)
-
-🧩 Database Integration (SQLite/MySQL/PostgreSQL)
-
-
-   Structure of folder:
-
-     Agentic_AI/
+```
+Agentic_AI_Recruitment_Manager/
 ├── app/
-│   ├── __init__.py
-│   ├── database.py
+│   ├── api/
+│   │   └── rag_api.py          # RAG search & rebuild endpoints
+│   ├── database.py              # SQLAlchemy engine & session setup
 │   ├── models/
-│   │   ├── __init__.py
-│   │   └── models.py
+│   │   └── models.py            # Candidate, Recruiter, Interview models
 │   └── services/
-│       ├── __init__.py
-│       └── calendar_service.py
+│       ├── rag_service.py       # Embedding, retrieval, LLM explanation logic
+│       ├── calendar_service.py  # Google Calendar OAuth + event creation
+│       └── email_service.py     # Interview invite generation & SMTP send
 ├── scripts/
-│   └── seed_data.py
+│   ├── seed_data.py             # Populate DB with sample candidates/recruiters
+│   └── build_vector_index.py    # Build/rebuild the Chroma vector index
 └── main.py
+```
 
+---
+
+## 🛡️ Security Notes
+
+- `chroma_db/`, `.env`, and `token.json` are excluded via `.gitignore` — no credentials or vector data are committed.
+- Google OAuth tokens are never hardcoded or logged.
+- The system is designed to run without exposing sensitive resume data to third-party APIs unless explicitly configured.
+
+---
+
+## 🔭 What's Next
+
+- [ ] Hybrid search (dense + keyword/BM25) for improved retrieval precision
+- [ ] RAGAS-based evaluation of retrieval quality (faithfulness, context precision)
+- [ ] Migrate orchestration logic to LangGraph for stateful, multi-step agent workflows
+- [ ] Dockerize for consistent deployment across environments
+
+---
+
+## 👩‍💻 Author
+
+**Vanshika Saxena**
+🔗 [GitHub](https://github.com/Vanshika290) · [LinkedIn](https://www.linkedin.com/in/vanshika-saxena-3447a8289/) · [LeetCode](https://leetcode.com/Vanshika_2907)
