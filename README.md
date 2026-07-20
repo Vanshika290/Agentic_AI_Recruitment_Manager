@@ -1,4 +1,5 @@
 # Agentic AI Recruitment Manager
+_AI-powered recruitment manager with RAG-based candidate matching, multi-agent orchestration, and calendar/email automation._
 
 Project that indexes candidate resumes, embeds them locally, and provides a retrieval API with optional LLM explanations.
 
