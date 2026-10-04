@@ -33,6 +33,22 @@ def test_startup_initializes_database_and_health_check_succeeds():
     assert response.json() == {"status": "ok"}
 
 
+def test_student_analysis_cors_allows_deployed_site():
+    response = client.options(
+        "/student/analyze",
+        headers={
+            "Origin": "https://agenticairecruitmentmanager-two.vercel.app",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == (
+        "https://agenticairecruitmentmanager-two.vercel.app"
+    )
+
+
 def test_candidate_explanation_uses_current_openai_client(monkeypatch):
     captured = {}
 

@@ -36,6 +36,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:3000",
         "https://agentic-ai-recruitment-manager.vercel.app",
+        "https://agenticairecruitmentmanager-two.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
