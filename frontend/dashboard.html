@@ -114,8 +114,10 @@
     </main>
 
     <script>
+      const API_BASE = window.RECRUITMENT_API_BASE || 'http://localhost:8000';
       const name = localStorage.getItem('recruitment_manager_name');
-      if (!name) {
+      const profession = localStorage.getItem('recruitment_manager_profession');
+      if (!name || profession !== 'hr') {
         window.location.href = 'index.html';
       } else {
         document.getElementById('greeting').textContent = `Hi ${name}!`;
@@ -174,7 +176,7 @@
         resultsCount.textContent = '';
 
         try {
-          const response = await fetch('http://localhost:8000/rag/search', {
+          const response = await fetch(`${API_BASE}/rag/search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query, top_k: Number(document.getElementById('top-k').value) })

@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Studio | Agentic AI Recruitment Manager</title>
+    <style>
+      :root {
+        --ink: #172b4d;
+        --muted: #62748a;
+        --blue: #1769d2;
+        --blue-dark: #1054ac;
+        --pale-blue: #eaf3ff;
+        --line: #d9e4f2;
+        --canvas: #f4f8fd;
+        --green: #238260;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: var(--canvas); color: var(--ink); font-family: "Segoe UI", sans-serif; }
+      .topbar { min-height: 68px; display: flex; align-items: center; background: #fff; border-bottom: 1px solid var(--line); }
+      .topbar-inner { width: min(1180px, 100%); margin: auto; padding: 0 28px; display: flex; align-items: center; gap: 12px; }
+      .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 7px; background: var(--pale-blue); color: var(--blue); font-size: .76rem; font-weight: 750; }
+      .brand-name { font-weight: 700; }
+      .topbar-inner a { margin-left: auto; color: var(--blue); font-size: .9rem; font-weight: 600; text-decoration: none; }
+      .topbar-inner a:hover { text-decoration: underline; }
+      main { width: min(1180px, 100%); margin: auto; padding: 36px 28px 60px; }
+      .welcome { margin-bottom: 25px; }
+      .welcome h1 { margin: 0 0 7px; font-family: Georgia, serif; font-size: 2rem; }
+      .welcome p { margin: 0; color: var(--muted); line-height: 1.55; }
+      .workspace { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); gap: 18px; align-items: start; }
+      .column { display: grid; gap: 18px; min-width: 0; }
+      .panel { padding: 22px; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px rgba(29,73,125,.045); }
+      .panel h2 { margin: 0 0 6px; font-size: 1.1rem; }
+      .panel-intro { margin: 0 0 19px; color: var(--muted); font-size: .91rem; line-height: 1.5; }
+      label { display: block; margin-bottom: 7px; font-size: .87rem; font-weight: 650; }
+      input[type="text"], textarea { display: block; width: 100%; border: 1px solid #b9cbe0; border-radius: 7px; background: #fff; color: var(--ink); font: inherit; }
+      input[type="text"] { height: 43px; padding: 0 12px; }
+      textarea { min-height: 100px; padding: 11px 12px; resize: vertical; line-height: 1.5; }
+      input:focus, textarea:focus { outline: 3px solid #c8e0ff; border-color: var(--blue); }
+      .form-field { margin-top: 15px; }
+      .help-text { display: block; margin-top: 6px; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+      .file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+      .file-picker { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 12px; border: 1px dashed #9db8d8; border-radius: 7px; background: #f8fbff; cursor: pointer; }
+      .file-picker:hover { border-color: var(--blue); background: #f2f7ff; }
+      .file-action { flex: none; padding: 7px 10px; border: 1px solid #bfd2e8; border-radius: 6px; background: #fff; color: var(--blue); font-size: .83rem; font-weight: 650; }
+      .file-name { color: var(--muted); font-size: .83rem; overflow-wrap: anywhere; }
+      .primary-button { min-height: 43px; padding: 0 17px; border: 0; border-radius: 7px; background: var(--blue); color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+      .primary-button:hover { background: var(--blue-dark); }
+      .primary-button:disabled { opacity: .65; cursor: wait; }
+      .full-width { width: 100%; }
+      .analysis-status { margin: 12px 0 0; color: var(--muted); font-size: .88rem; line-height: 1.45; }
+      .analysis-status.error { color: #a53535; }
+      .analysis-result[hidden] { display: none; }
+      .score-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+      .score-number { color: var(--blue); font-size: 2rem; font-weight: 750; line-height: 1; }
+      .score-number small { color: var(--muted); font-size: .95rem; font-weight: 550; }
+      .score-label { color: var(--muted); font-size: .86rem; }
+      .score-track { height: 9px; margin: 16px 0 9px; overflow: hidden; border-radius: 9px; background: #e8eff8; }
+      .score-fill { width: 0; height: 100%; border-radius: inherit; background: var(--blue); transition: width .35s ease; }
+      .score-caption { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+      .breakdown { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 16px 0 20px; }
+      .breakdown-item { padding: 10px; border: 1px solid var(--line); border-radius: 7px; background: #fbfdff; }
+      .breakdown-item strong { display: block; margin-bottom: 4px; font-size: .96rem; }
+      .breakdown-item span { color: var(--muted); font-size: .74rem; line-height: 1.3; }
+      .result-subhead { margin: 18px 0 9px; font-size: .89rem; }
+      .term-list { display: flex; flex-wrap: wrap; gap: 7px; }
+      .term { padding: 5px 9px; border-radius: 5px; background: #e9f5f0; color: #20694f; font-size: .8rem; }
+      .term.missing { background: #fff3df; color: #875516; }
+      .plain-list { display: grid; gap: 8px; margin: 0; padding-left: 19px; color: #43556d; font-size: .88rem; line-height: 1.5; }
+      .disclaimer { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: .77rem; line-height: 1.45; }
+      .chat-panel { position: sticky; top: 16px; }
+      .chat-messages { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 210px; max-height: 400px; margin: 0 0 14px; overflow-y: auto; }
+      .message { max-width: 92%; padding: 11px 13px; border-radius: 8px; background: #f0f5fc; color: #334b68; font-size: .88rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .message.user { align-self: flex-end; background: var(--blue); color: #fff; }
+      .message.pending { color: var(--muted); font-style: italic; }
+      .suggested-prompts { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 14px; }
+      .prompt-button { padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--blue); font-size: .78rem; cursor: pointer; }
+      .prompt-button:hover { background: #f2f7ff; }
+      .chat-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+      .chat-form textarea { min-height: 44px; max-height: 130px; resize: vertical; }
+      .send-button { min-height: 44px; padding: 0 13px; border: 0; border-radius: 7px; background: var(--blue); color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+      .send-button:hover { background: var(--blue-dark); }
+      .send-button:disabled { opacity: .65; cursor: wait; }
+      @media (max-width: 820px) {
+        main { padding: 28px 18px 48px; }
+        .topbar-inner { padding: 0 18px; }
+        .workspace { grid-template-columns: 1fr; }
+        .chat-panel { position: static; }
+      }
+      @media (max-width: 480px) {
+        .topbar-inner { gap: 8px; }
+        .brand-name { max-width: 190px; font-size: .86rem; }
+        .topbar-inner a { font-size: .82rem; }
+        main { padding: 24px 14px 40px; }
+        .welcome h1 { font-size: 1.7rem; }
+        .panel { padding: 17px; }
+        .breakdown { grid-template-columns: 1fr; }
+        .chat-form { grid-template-columns: 1fr; }
+        .send-button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="topbar" aria-label="Main navigation">
+      <div class="topbar-inner">
+        <div class="brand-mark" aria-hidden="true">RM</div>
+        <span class="brand-name">Agentic AI Recruitment Manager</span>
+        <a href="index.html">Change profile</a>
+      </div>
+    </nav>
+    <main>
+      <header class="welcome">
+        <h1 id="greeting">Hi there!</h1>
+        <p>Prepare for your next role with a resume review grounded in your target job.</p>
+      </header>
+      <div class="workspace">
+        <div class="column">
+          <section class="panel" aria-labelledby="analysis-title">
+            <h2 id="analysis-title">Resume match review</h2>
+            <p class="panel-intro">Choose a target role, then upload a resume or paste its text. Your resume is analyzed in memory and is not saved.</p>
+            <form id="analysis-form">
+              <div>
+                <label for="target-role">Target role</label>
+                <input id="target-role" name="role" type="text" list="role-options" placeholder="e.g. Data Analyst" maxlength="100" required />
+                <datalist id="role-options">
+                  <option value="Software Engineer"></option>
+                  <option value="Data Analyst"></option>
+                  <option value="Data Scientist"></option>
+                  <option value="Product Manager"></option>
+                  <option value="UX Designer"></option>
+                  <option value="Cybersecurity Analyst"></option>
+                  <option value="DevOps Engineer"></option>
+                </datalist>
+              </div>
+              <div class="form-field">
+                <label for="resume-file">Resume file</label>
+                <label class="file-picker" for="resume-file">
+                  <span class="file-action">Choose file</span>
+                  <span id="file-name" class="file-name">PDF, DOCX, or TXT · up to 5 MB</span>
+                </label>
+                <input class="file-input" id="resume-file" name="resume" type="file" accept=".pdf,.docx,.txt,application/pdf,text/plain" />
+              </div>
+              <div class="form-field">
+                <label for="resume-text">Or paste resume text</label>
+                <textarea id="resume-text" name="resume_text" maxlength="30000" placeholder="Paste your resume here if you don't have a file ready"></textarea>
+              </div>
+              <div class="form-field">
+                <label for="job-description">Target job description <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+                <textarea id="job-description" name="job_description" maxlength="15000" placeholder="Add a specific job description for a closer keyword comparison"></textarea>
+              </div>
+              <div class="form-field">
+                <button id="analyze-button" class="primary-button full-width" type="submit">Review my resume</button>
+                <p id="analysis-status" class="analysis-status" role="status" aria-live="polite">Your score includes role keywords, resume sections, and contact details.</p>
+              </div>
+            </form>
+          </section>
+
+          <section id="analysis-result" class="panel analysis-result" aria-labelledby="result-title" hidden>
+            <div class="score-header">
+              <div>
+                <h2 id="result-title">ATS readiness estimate</h2>
+                <span class="score-label">Common resume signals for your target role</span>
+              </div>
+              <div class="score-number"><span id="score-value">0</span><small> / 100</small></div>
+            </div>
+            <div class="score-track" role="progressbar" aria-label="Estimated ATS score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="score-fill" class="score-fill"></div>
+            </div>
+            <p class="score-caption">This is a guidance estimate, not a prediction of a specific employer's ATS.</p>
+            <div id="score-breakdown" class="breakdown"></div>
+            <h3 class="result-subhead">Role terms in your resume</h3>
+            <div id="matched-terms" class="term-list"></div>
+            <h3 class="result-subhead">Terms to consider adding, if accurate</h3>
+            <div id="missing-terms" class="term-list"></div>
+            <h3 class="result-subhead">Recommended edits</h3>
+            <ul id="suggestions" class="plain-list"></ul>
+            <p id="disclaimer" class="disclaimer"></p>
+          </section>
+        </div>
+
+        <section class="panel chat-panel" aria-labelledby="coach-title">
+          <h2 id="coach-title">Career coach</h2>
+          <p class="panel-intro">Ask about role skills, resume gaps, or how to improve an experience bullet.</p>
+          <div class="suggested-prompts" aria-label="Suggested questions">
+            <button class="prompt-button" type="button" data-question="Which skills should I learn for this role?">Skills for my role</button>
+            <button class="prompt-button" type="button" data-question="How can I improve my resume for this role?">Improve my resume</button>
+          </div>
+          <div id="chat-messages" class="chat-messages" role="log" aria-live="polite">
+            <div class="message">Hi! Choose a target role, then ask me which skills to build or how to make your resume clearer.</div>
+          </div>
+          <form id="chat-form" class="chat-form">
+            <textarea id="coach-question" aria-label="Your question" maxlength="2000" placeholder="Ask the career coach..." required></textarea>
+            <button id="send-button" class="send-button" type="submit">Ask</button>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const API_BASE = window.RECRUITMENT_API_BASE || 'http://localhost:8000';
+      const name = localStorage.getItem('recruitment_manager_name');
+      const profession = localStorage.getItem('recruitment_manager_profession');
+      if (!name || profession !== 'student') {
+        window.location.href = 'index.html';
+      } else {
+        document.getElementById('greeting').textContent = `Hi ${name}!`;
+      }
+
+      const roleInput = document.getElementById('target-role');
+      const fileInput = document.getElementById('resume-file');
+      const resumeInput = document.getElementById('resume-text');
+      const jobDescriptionInput = document.getElementById('job-description');
+      const analysisForm = document.getElementById('analysis-form');
+      const analysisStatus = document.getElementById('analysis-status');
+      const analysisButton = document.getElementById('analyze-button');
+      const chatMessages = document.getElementById('chat-messages');
+      const questionInput = document.getElementById('coach-question');
+      const sendButton = document.getElementById('send-button');
+      const savedTargetRole = localStorage.getItem('student_target_role');
+      if (savedTargetRole) roleInput.value = savedTargetRole;
+
+      roleInput.addEventListener('input', () => localStorage.setItem('student_target_role', roleInput.value.trim()));
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        document.getElementById('file-name').textContent = file ? file.name : 'PDF, DOCX, or TXT · up to 5 MB';
+      });
+
+      function appendMessage(text, kind) {
+        const message = document.createElement('div');
+        message.className = `message ${kind || ''}`.trim();
+        message.textContent = text;
+        chatMessages.appendChild(message);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return message;
+      }
+
+      function requestData(extraFields) {
+        const data = new FormData();
+        data.append('role', roleInput.value.trim());
+        data.append('job_description', jobDescriptionInput.value.trim());
+        const file = fileInput.files[0];
+        if (file) data.append('resume', file);
+        else if (resumeInput.value.trim()) data.append('resume_text', resumeInput.value.trim());
+        Object.entries(extraFields || {}).forEach(([key, value]) => data.append(key, value));
+        return data;
+      }
+
+      function renderTerms(containerId, terms, missing) {
+        const container = document.getElementById(containerId);
+        container.replaceChildren();
+        if (!terms.length) {
+          const empty = document.createElement('span');
+          empty.className = 'help-text';
+          empty.textContent = missing ? 'No role-specific gaps in the terms checked.' : 'No role terms detected yet.';
+          container.appendChild(empty);
+          return;
+        }
+        terms.forEach((term) => {
+          const chip = document.createElement('span');
+          chip.className = `term${missing ? ' missing' : ''}`;
+          chip.textContent = term;
+          container.appendChild(chip);
+        });
+      }
+
+      function renderAnalysis(result) {
+        document.getElementById('analysis-result').hidden = false;
+        document.getElementById('score-value').textContent = result.score;
+        const scoreFill = document.getElementById('score-fill');
+        scoreFill.style.width = `${result.score}%`;
+        scoreFill.parentElement.setAttribute('aria-valuenow', result.score);
+
+        const breakdown = document.getElementById('score-breakdown');
+        breakdown.replaceChildren();
+        const labels = [
+          ['keyword_coverage', 'Keyword coverage'],
+          ['resume_sections', 'Resume sections'],
+          ['contact_details', 'Contact details']
+        ];
+        labels.forEach(([key, label]) => {
+          const item = document.createElement('div');
+          item.className = 'breakdown-item';
+          const value = document.createElement('strong');
+          const maximum = key === 'keyword_coverage' ? 70 : key === 'resume_sections' ? 20 : 10;
+          value.textContent = `${result.scoring_breakdown[key]}/${maximum}`;
+          const caption = document.createElement('span');
+          caption.textContent = label;
+          item.append(value, caption);
+          breakdown.appendChild(item);
+        });
+
+        renderTerms('matched-terms', result.matched_keywords || [], false);
+        renderTerms('missing-terms', result.missing_keywords || [], true);
+        const suggestions = document.getElementById('suggestions');
+        suggestions.replaceChildren();
+        (result.suggestions || []).forEach((suggestion) => {
+          const item = document.createElement('li');
+          item.textContent = suggestion;
+          suggestions.appendChild(item);
+        });
+        document.getElementById('disclaimer').textContent = result.disclaimer || '';
+      }
+
+      analysisForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const file = fileInput.files[0];
+        if (!file && !resumeInput.value.trim()) {
+          analysisStatus.className = 'analysis-status error';
+          analysisStatus.textContent = 'Choose a resume file or paste resume text to continue.';
+          return;
+        }
+        if (file && file.size > 5 * 1024 * 1024) {
+          analysisStatus.className = 'analysis-status error';
+          analysisStatus.textContent = 'Resume files must be 5 MB or smaller.';
+          return;
+        }
+
+        analysisButton.disabled = true;
+        analysisButton.textContent = 'Reviewing...';
+        analysisStatus.className = 'analysis-status';
+        analysisStatus.textContent = 'Checking role keywords and resume structure...';
+        try {
+          const response = await fetch(`${API_BASE}/student/analyze`, { method: 'POST', body: requestData() });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.detail || 'Resume analysis failed. Please try again.');
+          renderAnalysis(data);
+          analysisStatus.textContent = 'Review complete. Your resume file was processed without being saved.';
+        } catch (error) {
+          analysisStatus.className = 'analysis-status error';
+          analysisStatus.textContent = error.message.includes('fetch')
+            ? `Could not reach the analysis service. Check that the API is available at ${API_BASE}.`
+            : error.message;
+        } finally {
+          analysisButton.disabled = false;
+          analysisButton.textContent = 'Review my resume';
+        }
+      });
+
+      document.getElementById('chat-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const question = questionInput.value.trim();
+        if (!question) return;
+        if (!roleInput.value.trim()) {
+          appendMessage('Choose your target role first so I can tailor the advice.', '');
+          roleInput.focus();
+          return;
+        }
+
+        appendMessage(question, 'user');
+        questionInput.value = '';
+        const pending = appendMessage('Reviewing your role and question...', 'pending');
+        sendButton.disabled = true;
+        try {
+          const response = await fetch(`${API_BASE}/student/coach`, {
+            method: 'POST',
+            body: requestData({ question })
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.detail || 'The career coach could not answer right now.');
+          pending.remove();
+          appendMessage(data.answer, '');
+        } catch (error) {
+          pending.remove();
+          appendMessage(error.message.includes('fetch')
+            ? `Could not reach the career coach service. Check that the API is available at ${API_BASE}.`
+            : error.message, '');
+        } finally {
+          sendButton.disabled = false;
+        }
+      });
+
+      document.querySelectorAll('.prompt-button').forEach((button) => {
+        button.addEventListener('click', () => {
+          questionInput.value = button.dataset.question;
+          document.getElementById('chat-form').requestSubmit();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.api.auth_api import router as auth_router
+from app.api.student_api import router as student_router
 from app.database import SessionLocal
 from app.models.models import User
 from app.services.auth_service import get_current_user
@@ -17,12 +18,18 @@ logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="RAG Candidate Search")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "https://agentic-ai-recruitment-manager.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 app.include_router(auth_router)
+app.include_router(student_router)
 
 rag = RAGService()
 

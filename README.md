@@ -105,196 +105,55 @@ Then visit **`http://localhost:8000/docs`** for the interactive Swagger UI.
 
 | Variable | Required? | Purpose |
 |---|---|---|
-| `GOOGLE_CLIENT_ID` | Yes for Google sign-in | Public Google OAuth client ID used by the frontend and backend token verification |
-| `JWT_SECRET_KEY` | Yes for auth | Secret used to sign application JWTs |
-| `OPENAI_API_KEY` | Optional | Enables LLM-generated match explanations. Without it, similarity-only results are returned. |
-| `OPENAI_MODEL` | Optional | Defaults to `gpt-3.5-turbo` |
-| `GOOGLE_CREDENTIALS` / `token.json` | Optional | Required only for Google Calendar sync |
+| `OPENAI_API_KEY` | Optional | Enables generated candidate-match explanations. Candidate ranking still works without it. |
+| `OPENAI_MODEL` | Optional | Defaults to `gpt-3.5-turbo` for candidate explanations. |
+| `JWT_SECRET_KEY` | Optional for the frontend | Used only by the retained legacy Google-auth and protected index-rebuild endpoints. |
+| `GOOGLE_CLIENT_ID` | Optional for the frontend | Used only by the retained legacy Google-auth endpoint. |
+| `GOOGLE_CREDENTIALS` / `token.json` | Optional | Required only for Google Calendar integration. |
 
-Example `.env` values:
-
-```env
-GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-JWT_SECRET_KEY=replace-with-a-random-long-secret
-OPENAI_API_KEY=your-openai-key-if-used
-OPENAI_MODEL=gpt-3.5-turbo
-```
-
-> The Google OAuth flow only requires the public client ID on the frontend and in backend token validation. The Google client secret is not exposed to the browser and is not required for Google ID token verification.
+The name and profession form is a lightweight profile selector, not account authentication. Its values are kept in the browser's local storage.
 
 ---
 
-## 🔐 Google Authentication Setup
+## 👥 Frontend Workflows
 
-### Backend auth endpoints
+Open `frontend/index.html`, enter a name, then choose a profession:
 
-- `POST /auth/google` — validates the Google ID token, creates or reuses the user record, and issues a JWT.
-- `GET /auth/me` — returns the authenticated user profile when a valid bearer token is supplied.
+- **HR team** opens `frontend/dashboard.html`, where a job description is matched against indexed candidate resumes.
+- **Student or job seeker** opens `frontend/student.html`, where a resume can be uploaded or pasted, compared with a target role and optional job description, and reviewed with an interactive career coach.
 
-### Authenticated API protection
+Resume analysis accepts PDF, DOCX, and TXT files up to 5 MB, or pasted text up to 30,000 characters. Files are parsed in memory and are not saved by the API. The ATS score is an estimate based on role keywords, common resume sections, and contact details; it does not predict a specific employer's ATS.
 
-The RAG endpoints now require a valid bearer token:
-
-- `POST /rag/search`
-- `POST /rag/rebuild`
-
-Requests without a valid token return `401 Unauthorized`.
-
-### User model
-
-The application now includes a `User` table with:
-
-- `id`
-- `google_id` (unique)
-- `email` (unique)
-- `name`
-- `profile_picture`
-- `created_at`
-- `last_login`
-
-This ensures the same Google account does not create duplicate user records.
-
----
-
-## 🌐 Frontend login flow
-
-The project includes a lightweight static frontend at `frontend/index.html` and `frontend/dashboard.html` for local Google sign-in testing.
-
-- The login page displays the Google "Continue with Google" button.
-- Google returns an ID token to the frontend.
-- The frontend sends that credential to `POST /auth/google`.
-- The backend verifies the token and returns a JWT.
-- The frontend stores the token in local storage and redirects the user to the dashboard.
-
----
-
-## 🧪 Local development
-
-```bash
-# 1. Create environment file
-copy .env.example .env
-
-# 2. Install dependencies
-python -m pip install -r requirements.txt
-
-# 3. Start the backend
-uvicorn app.api.rag_api:app --reload --host 0.0.0.0 --port 8000
-
-# 4. Serve the frontend locally
-# From the repository root:
-python -m http.server 5173 --directory frontend
-```
-
-Then open:
-
-- Frontend: http://localhost:5173/index.html
-- Backend: http://localhost:8000/docs
-
----
-
-## ☁️ Google Cloud Console configuration
-
-In Google Cloud Console, create or update an OAuth 2.0 Client ID for a web application.
-
-### Authorized JavaScript origins
-
-- `http://localhost:5173`
-- `http://localhost:8000`
-- `https://your-frontend-domain.vercel.app`
-
-### Authorized redirect URIs
-
-For the Google Identity Services popup flow used here, you typically do not need a custom redirect URL for the frontend page itself, but the OAuth client should include the exact application origins where Google Sign-In is loaded. For production, add:
-
-- `https://your-frontend-domain.vercel.app`
-- `https://your-backend-domain.onrender.com`
-
-If you later switch to a redirect-based OAuth flow, add the exact callback route used by the frontend or backend.
-
----
-
-## 🧾 Files changed for auth
-
-- `app/config.py` — environment settings for Google client ID and JWT secret.
-- `app/database.py` — base DB session setup and initialization.
-- `app/models/models.py` — added `User` model.
-- `app/services/auth_service.py` — Google token verification, user creation/reuse, JWT issuance, and authenticated-user dependency.
-- `app/api/auth_api.py` — Google login and profile endpoints.
-- `app/api/rag_api.py` — protected RAG routes.
-- `frontend/index.html` — Google sign-in page.
-- `frontend/dashboard.html` — authenticated dashboard landing page.
-- `tests/test_google_auth.py` — verification tests for new user, existing user, invalid token, and protected endpoint behavior.
-
----
-
-## ✅ Testing the Google login flow
-
-1. Fill in `GOOGLE_CLIENT_ID` and `JWT_SECRET_KEY` in `.env`.
-2. Start the backend at `http://localhost:8000`.
-3. Open `http://localhost:5173/index.html`.
-4. Click "Continue with Google" and choose an account.
-5. Confirm the backend creates a new user if it is the first login.
-6. Log in again to confirm the existing user is reused instead of duplicated.
-7. Confirm the dashboard loads after successful auth.
-8. Confirm a request without a valid token receives `401 Unauthorized`.
-
----
-
-## 🛠️ Production deployment notes
-
-When deploying to Vercel (frontend) and Render (backend):
-
-- Set `GOOGLE_CLIENT_ID` in the backend environment.
-- Use the same client ID on the frontend.
-- Set `JWT_SECRET_KEY` to a strong random secret for each environment.
-- Add your deployed frontend domain to the Google OAuth authorized JavaScript origins.
-- Ensure the backend CORS configuration allows the frontend origin before launch.
-
----
-
-## 📌 What was added
-
-This implementation adds Google Authentication / Sign-in with Google without touching the recruitment scheduling or RAG logic beyond protecting the relevant authenticated endpoints.
+The career coach gives role-specific skill recommendations and resume-editing guidance. Its built-in guidance works without an OpenAI key.
 
 ---
 
 ## 📡 API Reference
 
-### `POST /rag/search`
-Search candidates semantically against a job description.
+- `POST /rag/search` — public candidate search; expects JSON with `query` and optional `top_k`.
+- `POST /student/analyze` — multipart form with `role` and either `resume` (PDF/DOCX/TXT) or `resume_text`; `job_description` is optional.
+- `POST /student/coach` — multipart form with `role` and `question`; resume file/text and job description are optional context.
+- `POST /rag/rebuild` — rebuilds the Chroma index from the SQL database; this retained administrative endpoint requires the legacy bearer-token authentication.
+- `POST /auth/google` and `GET /auth/me` — retained legacy auth endpoints; the frontend does not use them.
 
-**Request:**
-```json
-{
-  "query": "Python backend engineer with FastAPI experience",
-  "top_k": 5
-}
+---
+
+## 🧪 Local Development
+
+```bash
+python -m pip install -r requirements.txt
+uvicorn app.api.rag_api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Response:**
-```json
-{
-  "query": "Python backend engineer with FastAPI experience",
-  "results": [
-    {
-      "id": "cand_2",
-      "metadata": { "name": "Jane Smith", "email": "jane@example.com", "id": 2 },
-      "document": "Frontend developer with 5 years...",
-      "distance": 1.5022,
-      "explanation": null
-    }
-  ]
-}
-```
-> `explanation` is `null` when `OPENAI_API_KEY` is not configured — the system still returns valid ranked results.
+In a second terminal, serve the static frontend:
 
-### `POST /rag/rebuild`
-Rebuilds the Chroma vector index from the current SQL database.
-
-**Response:**
-```json
-{ "status": "ok", "indexed": 12 }
+```bash
+python -m http.server 5173 --directory frontend
 ```
+
+Then open `http://localhost:5173/index.html`. For HR candidate search, seed the database and build its vector index using `python scripts/seed_data.py` and `python scripts/build_vector_index.py`.
+
+The Vercel configuration publishes the static `frontend/` directory. The FastAPI backend must also be hosted separately for candidate search, resume analysis, and coaching to work outside local development; set `window.RECRUITMENT_API_BASE` to that backend URL before the frontend scripts run and allow the frontend origin in backend CORS.
 
 ---
 
