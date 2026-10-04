@@ -178,7 +178,9 @@ class RAGService:
 
         embeddings = self._embed_texts(documents)
         collection = self._get_collection()
-        collection.delete()
+        existing_ids = collection.get(include=[])["ids"]
+        if existing_ids:
+            collection.delete(ids=existing_ids)
         if embeddings:
             collection.add(ids=ids, metadatas=metadatas, documents=documents, embeddings=embeddings)
 
