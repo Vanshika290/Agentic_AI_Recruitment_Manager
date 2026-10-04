@@ -38,6 +38,7 @@ app.add_middleware(
         "https://agentic-ai-recruitment-manager.vercel.app",
         "https://agenticairecruitmentmanager-two.vercel.app",
     ],
+    allow_origin_regex=r"https://agenticairecruitmentmanager(?:-[a-z0-9-]+)?\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -36,17 +36,40 @@ def test_startup_initializes_database_and_health_check_succeeds():
 def test_student_analysis_cors_allows_deployed_site():
     response = client.options(
         "/student/analyze",
-        headers={
-            "Origin": "https://agenticairecruitmentmanager-two.vercel.app",
-            "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "content-type",
-        },
+        headers=_preflight_headers(
+            "https://agenticairecruitmentmanager-two.vercel.app"
+        ),
     )
 
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == (
         "https://agenticairecruitmentmanager-two.vercel.app"
     )
+
+
+def _preflight_headers(origin):
+    return {
+        "Origin": origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+    }
+
+
+def test_student_analysis_cors_allows_project_preview_deployments():
+    origin = "https://agenticairecruitmentmanager-git-main-team.vercel.app"
+    response = client.options("/student/analyze", headers=_preflight_headers(origin))
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == origin
+
+
+def test_student_analysis_cors_rejects_unrelated_vercel_deployments():
+    response = client.options(
+        "/student/analyze",
+        headers=_preflight_headers("https://unrelated-project.vercel.app"),
+    )
+
+    assert response.status_code == 400
 
 
 def test_candidate_explanation_uses_current_openai_client(monkeypatch):
