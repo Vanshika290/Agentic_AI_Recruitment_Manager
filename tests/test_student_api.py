@@ -6,6 +6,13 @@ from app.api.rag_api import app
 client = TestClient(app)
 
 
+def test_health_endpoint():
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
 def test_analyze_resume_accepts_txt_upload():
     resume = b"""Jordan Lee
 jordan@example.com | 555-123-4567

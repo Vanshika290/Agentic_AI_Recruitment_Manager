@@ -2,6 +2,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from datetime import datetime, timedelta
+import json
 import os
 import sys
 
@@ -27,10 +28,15 @@ class CalendarService:
             
             if not self.creds or not self.creds.valid:
                 print("Starting new OAuth flow...")
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    CREDENTIALS_PATH, 
-                    SCOPES
-                )
+                credentials_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
+                if credentials_json:
+                    flow = InstalledAppFlow.from_client_config(
+                        json.loads(credentials_json), SCOPES
+                    )
+                else:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        CREDENTIALS_PATH, SCOPES
+                    )
                 self.creds = flow.run_local_server(port=0)
                 
                 print("Saving new token...")

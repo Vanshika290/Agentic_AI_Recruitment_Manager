@@ -105,11 +105,12 @@ Then visit **`http://localhost:8000/docs`** for the interactive Swagger UI.
 
 | Variable | Required? | Purpose |
 |---|---|---|
-| `OPENAI_API_KEY` | Optional | Enables generated candidate-match explanations. Candidate ranking still works without it. |
-| `OPENAI_MODEL` | Optional | Defaults to `gpt-3.5-turbo` for candidate explanations. |
+| `OPENAI_API_KEY` | Optional | Not required for candidate search or evidence-based explanations; retained for direct LLM explanation calls. |
+| `OPENAI_MODEL` | Optional | Defaults to `gpt-4o-mini` for direct LLM explanation calls. |
+| `DATABASE_URL` | Optional | SQLAlchemy connection URL. Defaults to the project's SQLite database file. Configure a persistent database path/storage for hosted deployments. |
 | `JWT_SECRET_KEY` | Optional for the frontend | Used only by the retained legacy Google-auth and protected index-rebuild endpoints. |
 | `GOOGLE_CLIENT_ID` | Optional for the frontend | Used only by the retained legacy Google-auth endpoint. |
-| `GOOGLE_CREDENTIALS` / `token.json` | Optional | Required only for Google Calendar integration. |
+| `GOOGLE_CREDENTIALS_JSON` / local `credentials.json` / `token.json` | Optional | Used only by Google Calendar integration. Never commit OAuth credentials or tokens. |
 
 The name and profession form is a lightweight profile selector, not account authentication. Its values are kept in the browser's local storage.
 
@@ -130,7 +131,8 @@ The career coach gives role-specific skill recommendations and resume-editing gu
 
 ## 📡 API Reference
 
-- `POST /rag/search` — public candidate search; expects JSON with `query` and optional `top_k`.
+- `GET /health` — checks that the API can reach its database.
+- `POST /rag/search` — public candidate search; expects JSON with `query` (up to 15,000 characters) and optional `top_k` (1–20). It returns the indexed candidate count, ranked results, an estimated match score, recognized matched/missing skills, and the score breakdown. Scores use cosine-semantic similarity (70%) plus detected-skill coverage (30%) when the job description contains recognized skills; otherwise they use semantic similarity only. A missing skill means it was not found in the resume text, not that the candidate lacks it.
 - `POST /student/analyze` — multipart form with `role` and either `resume` (PDF/DOCX/TXT) or `resume_text`; `job_description` is optional.
 - `POST /student/coach` — multipart form with `role` and `question`; resume file/text and job description are optional context.
 - `POST /rag/rebuild` — rebuilds the Chroma index from the SQL database; this retained administrative endpoint requires the legacy bearer-token authentication.
@@ -153,7 +155,15 @@ python -m http.server 5173 --directory frontend
 
 Then open `http://localhost:5173/index.html`. For HR candidate search, seed the database and build its vector index using `python scripts/seed_data.py` and `python scripts/build_vector_index.py`.
 
-The Vercel configuration publishes the static `frontend/` directory. The FastAPI backend must also be hosted separately for candidate search, resume analysis, and coaching to work outside local development; set `window.RECRUITMENT_API_BASE` to that backend URL before the frontend scripts run and allow the frontend origin in backend CORS.
+The Vercel configuration publishes the static `frontend/` directory, so it does not run the FastAPI backend. The dashboard's deployed API URL is set in `frontend/api-config.js`. The Railway start command rebuilds the cosine-similarity Chroma index before starting FastAPI.
+
+To deploy the API on Render:
+
+1. In Render, create a new **Blueprint** from this GitHub repository and deploy the `render.yaml` service. It builds the resume index from the repository's SQLite database when the service starts.
+2. After deployment, verify that `https://<your-render-service>.onrender.com/health` returns `{"status":"ok"}`.
+3. In `frontend/api-config.js`, set `DEPLOYED_API_BASE` to the Render service's base URL (for example, `https://recruitment-manager-api.onrender.com`), then push the change and redeploy the Vercel frontend. Local development continues using `http://localhost:8000`. The API already allows the production Vercel origin in CORS.
+
+Local development continues to use `http://localhost:8000` automatically. If the backend is not configured for a deployed frontend, the app now explains which configuration is missing instead of trying localhost.
 
 ---
 

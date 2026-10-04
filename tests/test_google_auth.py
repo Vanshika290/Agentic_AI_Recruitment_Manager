@@ -1,13 +1,20 @@
 import os
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.rag_api import app
 from app.database import Base, SessionLocal
 from app.models.models import User
+from app.services import auth_service
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def use_test_jwt_secret(monkeypatch):
+    monkeypatch.setattr(auth_service, "JWT_SECRET_KEY", "test-only-jwt-secret")
 
 
 def override_get_db():
@@ -93,6 +100,7 @@ def test_google_auth_reuses_existing_user(monkeypatch):
 def test_candidate_search_works_without_auth(monkeypatch):
     from app.api import rag_api
 
+    monkeypatch.setattr(rag_api.rag, "indexed_candidate_count", lambda: 1)
     monkeypatch.setattr(
         rag_api.rag,
         "retrieve_candidates",
@@ -109,7 +117,10 @@ def test_candidate_search_works_without_auth(monkeypatch):
     assert response.status_code == 200, response.text
     payload = response.json()
     assert payload["query"] == "Python backend engineer"
+    assert payload["candidate_count"] == 1
     assert payload["results"][0]["metadata"]["name"] == "Jordan Lee"
+    assert payload["results"][0]["matched_skills"] == ["Python"]
+    assert payload["results"][0]["match_score"] > 0
 
 
 def test_invalid_google_credential_is_rejected(monkeypatch):

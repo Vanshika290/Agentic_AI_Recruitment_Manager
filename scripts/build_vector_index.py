@@ -7,16 +7,19 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 sys.path.insert(0, project_root)
 
-from app.database import SessionLocal
+from app.database import SessionLocal, init_db
 from app.services.rag_service import RAGService
 
 
 def main():
+    init_db()
     db = SessionLocal()
-    rag = RAGService()
-    stats = rag.build_index_from_db(db)
-    print(f"Indexed {stats.get('indexed', 0)} candidates into Chroma.")
-    db.close()
+    try:
+        rag = RAGService()
+        stats = rag.build_index_from_db(db)
+        print(f"Indexed {stats.get('indexed', 0)} candidates into Chroma.")
+    finally:
+        db.close()
 
 
 if __name__ == "__main__":

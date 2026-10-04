@@ -196,8 +196,9 @@
       </div>
     </main>
 
+    <script src="api-config.js"></script>
     <script>
-      const API_BASE = window.RECRUITMENT_API_BASE || 'http://localhost:8000';
+      const API_BASE = window.RECRUITMENT_API_BASE;
       const name = localStorage.getItem('recruitment_manager_name');
       const profession = localStorage.getItem('recruitment_manager_profession');
       if (!name || profession !== 'student') {
@@ -314,6 +315,11 @@
           analysisStatus.textContent = 'Resume files must be 5 MB or smaller.';
           return;
         }
+        if (!API_BASE) {
+          analysisStatus.className = 'analysis-status error';
+          analysisStatus.textContent = 'Resume analysis is not configured for this deployment. Set the FastAPI backend URL in frontend/api-config.js and redeploy the frontend.';
+          return;
+        }
 
         analysisButton.disabled = true;
         analysisButton.textContent = 'Reviewing...';
@@ -343,6 +349,10 @@
         if (!roleInput.value.trim()) {
           appendMessage('Choose your target role first so I can tailor the advice.', '');
           roleInput.focus();
+          return;
+        }
+        if (!API_BASE) {
+          appendMessage('Career coaching is not configured for this deployment. Set the FastAPI backend URL in frontend/api-config.js and redeploy the frontend.', '');
           return;
         }
 

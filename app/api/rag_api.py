@@ -1,21 +1,34 @@
-from typing import Optional
+from contextlib import asynccontextmanager
 import logging
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from sqlalchemy import text
 
 from app.api.auth_api import router as auth_router
 from app.api.student_api import router as student_router
-from app.database import SessionLocal
+from app.database import SessionLocal, engine, init_db
 from app.models.models import User
 from app.services.auth_service import get_current_user
-from app.services.rag_service import RAGService
+from app.services.rag_service import (
+    EmbeddingModelUnavailableError,
+    EmptyCandidateIndexError,
+    RAGService,
+    VectorStoreUnavailableError,
+)
 
 logger = logging.getLogger("rag_api")
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI(title="RAG Candidate Search")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="RAG Candidate Search", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -36,12 +49,18 @@ rag = RAGService()
 
 @app.get("/health")
 def health_check():
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception as exc:
+        logger.exception("Database health check failed")
+        raise HTTPException(status_code=503, detail="Database is unavailable.") from exc
     return {"status": "ok"}
 
 
 class SearchRequest(BaseModel):
-    query: str
-    top_k: Optional[int] = 5
+    query: str = Field(..., min_length=1, max_length=15000)
+    top_k: int = Field(default=5, ge=1, le=20)
 
 
 @app.post("/rag/search")
@@ -49,22 +68,48 @@ def rag_search(req: SearchRequest):
     if not req.query or not req.query.strip():
         raise HTTPException(status_code=400, detail="Query must be a non-empty string")
 
-    logger.info("Received RAG search request: %s", req.query)
+    logger.info("Received RAG search request")
     try:
-        results = rag.retrieve_candidates(req.query, top_k=req.top_k)
-    except Exception as e:
-        logger.exception("Failed retrieving candidates: %s", e)
-        raise HTTPException(status_code=500, detail="Retrieval failed")
+        search_result = rag.search_candidates(req.query, top_k=req.top_k)
+    except EmptyCandidateIndexError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "empty_candidate_index",
+                "message": "No candidate resumes are indexed. Add resumes and rebuild the candidate index.",
+            },
+        ) from exc
+    except VectorStoreUnavailableError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "vector_store_unavailable",
+                "message": "The candidate vector database is unavailable. Retry the search.",
+            },
+        ) from exc
+    except EmbeddingModelUnavailableError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "embedding_model_unavailable",
+                "message": "The candidate search model is unavailable. Retry the search.",
+            },
+        ) from exc
+    except Exception as exc:
+        logger.exception("Failed retrieving candidates")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "code": "candidate_search_failed",
+                "message": "Candidate search failed. Check the API logs and retry.",
+            },
+        ) from exc
 
-    for item in results:
-        try:
-            explanation = rag.explain_candidate_match(item.get("document", ""), req.query)
-            item["explanation"] = explanation
-        except Exception as e:
-            logger.warning("Explanation generation failed for %s: %s", item.get("id"), e)
-            item["explanation"] = None
-
-    return {"query": req.query, "results": results}
+    return {
+        "query": req.query,
+        "candidate_count": search_result["candidate_count"],
+        "results": search_result["results"],
+    }
 
 
 @app.post("/rag/rebuild")
