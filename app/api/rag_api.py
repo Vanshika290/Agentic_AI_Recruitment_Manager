@@ -34,6 +34,11 @@ app.include_router(student_router)
 rag = RAGService()
 
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
 class SearchRequest(BaseModel):
     query: str
     top_k: Optional[int] = 5
