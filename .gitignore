@@ -3,5 +3,6 @@ chroma_db/
 venv/
 token.json
 .env
+.env.*
 __pycache__/
 *.pyc

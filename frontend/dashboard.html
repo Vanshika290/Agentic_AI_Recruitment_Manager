@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recruitment Manager Dashboard</title>
+    <style>
+      :root { --bg: #0f172a; --panel: #111827; --text: #e5e7eb; --muted: #9ca3af; --primary: #2563eb; }
+      body { margin: 0; min-height: 100vh; font-family: Arial, sans-serif; background: #020817; color: var(--text); }
+      .layout { max-width: 980px; margin: 48px auto; padding: 24px; }
+      .header { margin-bottom: 28px; }
+      .header h1 { margin: 0 0 10px; }
+      .quote { margin: 0; color: var(--muted); font-size: 1.05rem; }
+      .card { background: rgba(17,24,39,0.95); border: 1px solid rgba(148,163,184,.18); border-radius: 8px; padding: 24px; }
+      .change-name { display: inline-block; margin-top: 14px; color: #93c5fd; }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div class="header">
+        <div>
+          <h1 id="greeting">Hi there!</h1>
+          <p id="quote" class="quote">The right hire is more than a match on paper; it’s the spark that moves a team forward.</p>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Agentic AI Recruitment Manager</h2>
+        <p>Candidate matching and hiring workflows, all in one place.</p>
+        <a class="change-name" href="index.html">Change name</a>
+      </div>
+    </div>
+
+    <script>
+      const name = localStorage.getItem('recruitment_manager_name');
+      if (!name) {
+        window.location.href = 'index.html';
+      } else {
+        document.getElementById('greeting').textContent = `Hi ${name}!`;
+      }
+    </script>
+  </body>
+</html>

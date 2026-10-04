@@ -105,9 +105,156 @@ Then visit **`http://localhost:8000/docs`** for the interactive Swagger UI.
 
 | Variable | Required? | Purpose |
 |---|---|---|
+| `GOOGLE_CLIENT_ID` | Yes for Google sign-in | Public Google OAuth client ID used by the frontend and backend token verification |
+| `JWT_SECRET_KEY` | Yes for auth | Secret used to sign application JWTs |
 | `OPENAI_API_KEY` | Optional | Enables LLM-generated match explanations. Without it, similarity-only results are returned. |
 | `OPENAI_MODEL` | Optional | Defaults to `gpt-3.5-turbo` |
 | `GOOGLE_CREDENTIALS` / `token.json` | Optional | Required only for Google Calendar sync |
+
+Example `.env` values:
+
+```env
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+JWT_SECRET_KEY=replace-with-a-random-long-secret
+OPENAI_API_KEY=your-openai-key-if-used
+OPENAI_MODEL=gpt-3.5-turbo
+```
+
+> The Google OAuth flow only requires the public client ID on the frontend and in backend token validation. The Google client secret is not exposed to the browser and is not required for Google ID token verification.
+
+---
+
+## 🔐 Google Authentication Setup
+
+### Backend auth endpoints
+
+- `POST /auth/google` — validates the Google ID token, creates or reuses the user record, and issues a JWT.
+- `GET /auth/me` — returns the authenticated user profile when a valid bearer token is supplied.
+
+### Authenticated API protection
+
+The RAG endpoints now require a valid bearer token:
+
+- `POST /rag/search`
+- `POST /rag/rebuild`
+
+Requests without a valid token return `401 Unauthorized`.
+
+### User model
+
+The application now includes a `User` table with:
+
+- `id`
+- `google_id` (unique)
+- `email` (unique)
+- `name`
+- `profile_picture`
+- `created_at`
+- `last_login`
+
+This ensures the same Google account does not create duplicate user records.
+
+---
+
+## 🌐 Frontend login flow
+
+The project includes a lightweight static frontend at `frontend/index.html` and `frontend/dashboard.html` for local Google sign-in testing.
+
+- The login page displays the Google "Continue with Google" button.
+- Google returns an ID token to the frontend.
+- The frontend sends that credential to `POST /auth/google`.
+- The backend verifies the token and returns a JWT.
+- The frontend stores the token in local storage and redirects the user to the dashboard.
+
+---
+
+## 🧪 Local development
+
+```bash
+# 1. Create environment file
+copy .env.example .env
+
+# 2. Install dependencies
+python -m pip install -r requirements.txt
+
+# 3. Start the backend
+uvicorn app.api.rag_api:app --reload --host 0.0.0.0 --port 8000
+
+# 4. Serve the frontend locally
+# From the repository root:
+python -m http.server 5173 --directory frontend
+```
+
+Then open:
+
+- Frontend: http://localhost:5173/index.html
+- Backend: http://localhost:8000/docs
+
+---
+
+## ☁️ Google Cloud Console configuration
+
+In Google Cloud Console, create or update an OAuth 2.0 Client ID for a web application.
+
+### Authorized JavaScript origins
+
+- `http://localhost:5173`
+- `http://localhost:8000`
+- `https://your-frontend-domain.vercel.app`
+
+### Authorized redirect URIs
+
+For the Google Identity Services popup flow used here, you typically do not need a custom redirect URL for the frontend page itself, but the OAuth client should include the exact application origins where Google Sign-In is loaded. For production, add:
+
+- `https://your-frontend-domain.vercel.app`
+- `https://your-backend-domain.onrender.com`
+
+If you later switch to a redirect-based OAuth flow, add the exact callback route used by the frontend or backend.
+
+---
+
+## 🧾 Files changed for auth
+
+- `app/config.py` — environment settings for Google client ID and JWT secret.
+- `app/database.py` — base DB session setup and initialization.
+- `app/models/models.py` — added `User` model.
+- `app/services/auth_service.py` — Google token verification, user creation/reuse, JWT issuance, and authenticated-user dependency.
+- `app/api/auth_api.py` — Google login and profile endpoints.
+- `app/api/rag_api.py` — protected RAG routes.
+- `frontend/index.html` — Google sign-in page.
+- `frontend/dashboard.html` — authenticated dashboard landing page.
+- `tests/test_google_auth.py` — verification tests for new user, existing user, invalid token, and protected endpoint behavior.
+
+---
+
+## ✅ Testing the Google login flow
+
+1. Fill in `GOOGLE_CLIENT_ID` and `JWT_SECRET_KEY` in `.env`.
+2. Start the backend at `http://localhost:8000`.
+3. Open `http://localhost:5173/index.html`.
+4. Click "Continue with Google" and choose an account.
+5. Confirm the backend creates a new user if it is the first login.
+6. Log in again to confirm the existing user is reused instead of duplicated.
+7. Confirm the dashboard loads after successful auth.
+8. Confirm a request without a valid token receives `401 Unauthorized`.
+
+---
+
+## 🛠️ Production deployment notes
+
+When deploying to Vercel (frontend) and Render (backend):
+
+- Set `GOOGLE_CLIENT_ID` in the backend environment.
+- Use the same client ID on the frontend.
+- Set `JWT_SECRET_KEY` to a strong random secret for each environment.
+- Add your deployed frontend domain to the Google OAuth authorized JavaScript origins.
+- Ensure the backend CORS configuration allows the frontend origin before launch.
+
+---
+
+## 📌 What was added
+
+This implementation adds Google Authentication / Sign-in with Google without touching the recruitment scheduling or RAG logic beyond protecting the relevant authenticated endpoints.
 
 ---
 
