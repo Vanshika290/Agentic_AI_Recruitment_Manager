@@ -123,7 +123,7 @@ Open `frontend/index.html`, enter a name, then choose a profession:
 - **HR team** opens `frontend/dashboard.html`, where a job description is matched against indexed candidate resumes.
 - **Student or job seeker** opens `frontend/student.html`, where a resume can be uploaded or pasted, compared with a target role and optional job description, and reviewed with an interactive career coach.
 
-Resume analysis accepts PDF, DOCX, and TXT files up to 5 MB, or pasted text up to 30,000 characters. Files are parsed in memory and are not saved by the API. The ATS score is an estimate based on role keywords, common resume sections, and contact details; it does not predict a specific employer's ATS.
+Resume analysis accepts PDF, DOCX, and TXT files up to 5 MB, or pasted text up to 30,000 characters. Files are parsed in memory and are not saved by the API. The ATS score is a heuristic estimate based on keywords from the supplied job description (or a general role template when no description is supplied), common resume sections, and contact details. It does not reproduce or predict a specific employer's ATS.
 
 Students can also run a five-question mock interview. Questions quote project or experience details from the resume; after each answer, the app gives practice feedback on specificity, personal contribution, and outcomes. Resume content is processed in memory and is not saved. The interview questions and feedback work without an OpenAI key and are practice guidance, not a hiring assessment.
 

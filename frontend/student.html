@@ -190,7 +190,7 @@
             <div class="score-track" role="progressbar" aria-label="Estimated ATS score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <div id="score-fill" class="score-fill"></div>
             </div>
-            <p class="score-caption">This is a guidance estimate, not a prediction of a specific employer's ATS.</p>
+            <p id="score-caption" class="score-caption">This is a guidance estimate, not a prediction of a specific employer's ATS.</p>
             <div id="score-breakdown" class="breakdown"></div>
             <h3 class="result-subhead">Role terms in your resume</h3>
             <div id="matched-terms" class="term-list"></div>
@@ -495,6 +495,9 @@
       function renderAnalysis(result) {
         document.getElementById('analysis-result').hidden = false;
         document.getElementById('score-value').textContent = result.score;
+        document.getElementById('score-caption').textContent = result.scoring_basis === 'job_description'
+          ? 'Keyword coverage is based on the job description you provided, plus resume sections and contact details. This is a guidance estimate; employers use different ATS tools.'
+          : 'Keyword coverage uses a general role template because no job description was provided, plus resume sections and contact details. This is a guidance estimate; employers use different ATS tools.';
         const scoreFill = document.getElementById('score-fill');
         scoreFill.style.width = `${result.score}%`;
         scoreFill.parentElement.setAttribute('aria-valuenow', result.score);

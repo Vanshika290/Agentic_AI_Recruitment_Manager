@@ -21,7 +21,7 @@ Experience
 Automated deployment checks for three services.
 """
 
-    result = analyze_resume(resume, "Software Engineer", "Build REST APIs with Docker")
+    result = analyze_resume(resume, "Software Engineer", "Build REST APIs with Docker using Python")
 
     assert 0 <= result["score"] <= 100
     assert "Python" in result["matched_keywords"]
@@ -30,6 +30,37 @@ Automated deployment checks for three services.
     assert result["has_email"] is True
     assert result["has_phone"] is True
     assert result["scoring_breakdown"]["keyword_coverage"] <= 70
+
+
+def test_analyze_resume_uses_custom_job_description_instead_of_role_template():
+    resume = """Jordan Lee
+Skills
+Excel, Tableau
+Experience
+Created sales dashboards in Tableau and Excel.
+Education
+Bachelor degree
+Projects
+Monthly sales reporting dashboard
+"""
+
+    result = analyze_resume(
+        resume,
+        "Data Analyst",
+        "Tableau, Excel, SQL",
+    )
+
+    assert result["scoring_basis"] == "job_description"
+    assert result["matched_keywords"] == ["Tableau", "Excel"]
+    assert result["missing_keywords"] == ["SQL"]
+    assert result["scoring_breakdown"]["keyword_coverage"] == 47
+
+
+def test_analyze_resume_falls_back_to_role_template_without_job_description():
+    result = analyze_resume("Python and SQL experience.", "Data Analyst")
+
+    assert result["scoring_basis"] == "role_template"
+    assert result["matched_keywords"] == ["SQL", "Python"]
 
 
 def test_coach_tailors_skill_advice_to_selected_role():

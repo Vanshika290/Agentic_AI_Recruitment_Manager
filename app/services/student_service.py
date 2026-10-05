@@ -27,6 +27,9 @@ STOP_WORDS = {
     "company", "demonstrated", "develop", "development", "experience", "experienced", "for", "from", "have",
     "ideal", "in", "include", "including", "into", "is", "job", "looking", "must", "our", "preferred", "role",
     "skills", "strong", "team", "the", "their", "this", "to", "using", "with", "work", "years",
+    "ability", "about", "across", "assist", "business", "candidate", "candidates", "collaborate",
+    "demonstrate", "ensure", "excellent", "join", "opportunity", "position", "qualifications",
+    "responsibilities", "responsibility", "seeking", "support", "teams", "we",
 }
 
 SECTION_PATTERNS = {
@@ -101,8 +104,25 @@ def _role_skills(role: str) -> list[str]:
 
 
 def _job_keywords(job_description: str) -> list[str]:
-    words = re.findall(r"[a-z][a-z0-9+#.-]{2,}", job_description.lower())
-    return list(dict.fromkeys(word for word in words if word not in STOP_WORDS))[:12]
+    remaining = job_description.lower()
+    skill_catalog = list(dict.fromkeys(
+        skill
+        for skills in ROLE_SKILLS.values()
+        for skill in skills
+    ))
+    recognized_skills = []
+    for skill in sorted(skill_catalog, key=len, reverse=True):
+        escaped_skill = re.escape(skill.lower()).replace(r"\ ", r"\s+")
+        pattern = re.compile(rf"(?<![a-z0-9]){escaped_skill}(?![a-z0-9])")
+        if pattern.search(remaining):
+            recognized_skills.append(skill)
+            remaining = pattern.sub(" ", remaining)
+
+    words = re.findall(r"[a-z][a-z0-9+#.-]{2,}", remaining)
+    additional_keywords = list(dict.fromkeys(
+        word for word in words if word not in STOP_WORDS
+    ))
+    return (recognized_skills + additional_keywords)[:12]
 
 
 def _contains_term(text: str, term: str) -> bool:
@@ -214,7 +234,8 @@ def analyze_resume(resume_text: str, role: str, job_description: str = "") -> di
     if not target_role:
         raise ValueError("Choose a target role before analyzing your resume.")
 
-    keywords = list(dict.fromkeys(_role_skills(target_role) + _job_keywords(job_description or "")))
+    custom_job_description = (job_description or "").strip()
+    keywords = _job_keywords(custom_job_description) if custom_job_description else _role_skills(target_role)
     matched = [keyword for keyword in keywords if _contains_term(resume, keyword)]
     missing = [keyword for keyword in keywords if keyword not in matched]
     present_sections = [name for name, pattern in SECTION_PATTERNS.items() if re.search(pattern, resume, re.IGNORECASE)]
@@ -245,6 +266,7 @@ def analyze_resume(resume_text: str, role: str, job_description: str = "") -> di
     return {
         "role": target_role,
         "score": score,
+        "scoring_basis": "job_description" if custom_job_description else "role_template",
         "matched_keywords": matched,
         "missing_keywords": missing,
         "present_sections": present_sections,
