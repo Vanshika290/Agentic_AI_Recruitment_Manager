@@ -159,7 +159,7 @@ python -m http.server 5173 --directory frontend
 
 Then open `http://localhost:5173/index.html`. For HR candidate search, seed the database and build its vector index using `python scripts/seed_data.py` and `python scripts/build_vector_index.py`.
 
-The Vercel configuration publishes the static `frontend/` directory, so it does not run the FastAPI backend. The dashboard's deployed API URL is set in `frontend/api-config.js`. The Railway start command rebuilds the cosine-similarity Chroma index before starting FastAPI.
+The Vercel configuration publishes the static `frontend/` directory, so it does not run the FastAPI backend. The dashboard's deployed API URL is set in `frontend/api-config.js`. Railway's `railway.json` and Railpack's `railpack.json` both specify the backend start command, which rebuilds the cosine-similarity Chroma index before starting FastAPI. Set the Railway service root directory to the repository root so Railpack can read `railpack.json`.
 
 To deploy the API on Render:
 
