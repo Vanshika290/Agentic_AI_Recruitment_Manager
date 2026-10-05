@@ -36,6 +36,40 @@ async def analyze_student_resume(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@router.post("/interview/start")
+async def start_student_interview(
+    role: str = Form(..., max_length=100),
+    resume_text: str = Form("", max_length=student_service.MAX_RESUME_CHARACTERS),
+    resume: Optional[UploadFile] = File(None),
+):
+    try:
+        text = await _resume_text(resume, resume_text)
+        return student_service.generate_interview_questions(text, role)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Mock interview could not be started")
+        raise HTTPException(status_code=500, detail="The mock interview could not be started.") from exc
+
+
+@router.post("/interview/answer")
+async def answer_student_interview(
+    role: str = Form(..., max_length=100),
+    question: str = Form(..., max_length=2000),
+    answer: str = Form(..., max_length=5000),
+    resume_text: str = Form("", max_length=student_service.MAX_RESUME_CHARACTERS),
+    resume: Optional[UploadFile] = File(None),
+):
+    try:
+        text = await _resume_text(resume, resume_text)
+        return student_service.evaluate_interview_answer(question, answer, text)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Mock interview feedback failed")
+        raise HTTPException(status_code=500, detail="Interview feedback is unavailable right now.") from exc
+
+
 @router.post("/coach")
 async def coach_student(
     role: str = Form(..., max_length=100),

@@ -125,6 +125,8 @@ Open `frontend/index.html`, enter a name, then choose a profession:
 
 Resume analysis accepts PDF, DOCX, and TXT files up to 5 MB, or pasted text up to 30,000 characters. Files are parsed in memory and are not saved by the API. The ATS score is an estimate based on role keywords, common resume sections, and contact details; it does not predict a specific employer's ATS.
 
+Students can also run a five-question mock interview. Questions quote project or experience details from the resume; after each answer, the app gives practice feedback on specificity, personal contribution, and outcomes. Resume content is processed in memory and is not saved. The interview questions and feedback work without an OpenAI key and are practice guidance, not a hiring assessment.
+
 The career coach gives role-specific skill recommendations and resume-editing guidance. Its built-in guidance works without an OpenAI key.
 
 ---
@@ -134,6 +136,8 @@ The career coach gives role-specific skill recommendations and resume-editing gu
 - `GET /health` — checks that the API can reach its database.
 - `POST /rag/search` — public candidate search; expects JSON with `query` (up to 15,000 characters) and optional `top_k` (1–20). It returns the indexed candidate count, ranked results, an estimated match score, recognized matched/missing skills, and the score breakdown. Scores use cosine-semantic similarity (70%) plus detected-skill coverage (30%) when the job description contains recognized skills; otherwise they use semantic similarity only. A missing skill means it was not found in the resume text, not that the candidate lacks it.
 - `POST /student/analyze` — multipart form with `role` and either `resume` (PDF/DOCX/TXT) or `resume_text`; `job_description` is optional.
+- `POST /student/interview/start` — multipart form with `role` and either `resume` (PDF/DOCX/TXT) or `resume_text`; returns five questions grounded in project and experience details found in the resume.
+- `POST /student/interview/answer` — multipart form with `role`, `question`, `answer`, and either `resume` or `resume_text`; returns strengths and suggestions for improving the practice answer.
 - `POST /student/coach` — multipart form with `role` and `question`; resume file/text and job description are optional context.
 - `POST /rag/rebuild` — rebuilds the Chroma index from the SQL database; this retained administrative endpoint requires the legacy bearer-token authentication.
 - `POST /auth/google` and `GET /auth/me` — retained legacy auth endpoints; the frontend does not use them.

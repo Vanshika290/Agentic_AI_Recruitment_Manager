@@ -81,6 +81,30 @@
       .send-button { min-height: 44px; padding: 0 13px; border: 0; border-radius: 7px; background: var(--blue); color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
       .send-button:hover { background: var(--blue-dark); }
       .send-button:disabled { opacity: .65; cursor: wait; }
+      .interview-panel { border-color: #dcdff7; background: linear-gradient(145deg, #fff 55%, #f8f8ff); }
+      .interview-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+      .interview-title-row h2 { margin: 0; }
+      .interview-icon { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border-radius: 10px; background: #efefff; color: #6258d9; font-size: 1rem; }
+      .interview-panel .panel-intro { margin-top: 8px; }
+      .interview-status { margin: 0 0 12px; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+      .interview-status.error { color: #a53535; }
+      .interview-progress { margin: 0 0 9px; color: #6b65c9; font-size: .76rem; font-weight: 700; }
+      .interview-messages { display: grid; gap: 10px; max-height: 300px; margin: 0 0 12px; overflow-y: auto; }
+      .interview-message { padding: 11px 13px; border: 1px solid #e2e5f4; border-radius: 9px; background: #fff; color: #334b68; font-size: .84rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .interview-message.question { border-color: #dcdcff; background: #f7f7ff; }
+      .interview-message.answer { justify-self: end; max-width: 92%; border-color: #c8d9f5; background: #edf4ff; }
+      .interview-message.feedback { background: #f5faf7; }
+      .interview-message.pending { color: var(--muted); font-style: italic; }
+      .interview-answer-form { display: grid; gap: 9px; }
+      .interview-answer-form textarea { min-height: 88px; }
+      .interview-actions { display: flex; align-items: center; gap: 10px; }
+      .interview-actions .primary-button { flex: 1; }
+      .interview-actions .secondary-button { min-height: 43px; padding: 0 13px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #52627c; font: inherit; font-size: .84rem; font-weight: 600; cursor: pointer; }
+      .interview-actions .secondary-button:hover { background: #f6f8fc; }
+      .interview-actions button:disabled { opacity: .65; cursor: wait; }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      }
       @media (max-width: 820px) {
         main { padding: 28px 18px 48px; }
         .topbar-inner { padding: 0 18px; }
@@ -176,6 +200,28 @@
             <ul id="suggestions" class="plain-list"></ul>
             <p id="disclaimer" class="disclaimer"></p>
           </section>
+
+          <section class="panel interview-panel" aria-labelledby="interview-title">
+            <div class="interview-title-row">
+              <span class="interview-icon" aria-hidden="true">✦</span>
+              <h2 id="interview-title">Resume-based mock interview</h2>
+            </div>
+            <p class="panel-intro">Practice answering questions about real projects and experience on your resume. Get feedback after each answer.</p>
+            <p id="interview-status" class="interview-status" role="status" aria-live="polite">Upload or paste your resume and choose a target role to begin. Your resume is processed in memory, not saved.</p>
+            <button id="start-interview" class="primary-button" type="button">Start mock interview</button>
+            <div id="interview-session" hidden>
+              <p id="interview-progress" class="interview-progress"></p>
+              <div id="interview-messages" class="interview-messages" role="log" aria-live="polite"></div>
+              <form id="interview-answer-form" class="interview-answer-form">
+                <label for="interview-answer">Your answer</label>
+                <textarea id="interview-answer" maxlength="5000" placeholder="Take a moment to describe what you did and what you learned..." required></textarea>
+                <div class="interview-actions">
+                  <button id="submit-interview-answer" class="primary-button" type="submit">Get feedback</button>
+                  <button id="restart-interview" class="secondary-button" type="button">Start over</button>
+                </div>
+              </form>
+            </div>
+          </section>
         </div>
 
         <section class="panel chat-panel" aria-labelledby="coach-title">
@@ -217,10 +263,24 @@
       const chatMessages = document.getElementById('chat-messages');
       const questionInput = document.getElementById('coach-question');
       const sendButton = document.getElementById('send-button');
+      const interviewStatus = document.getElementById('interview-status');
+      const startInterviewButton = document.getElementById('start-interview');
+      const interviewSession = document.getElementById('interview-session');
+      const interviewProgress = document.getElementById('interview-progress');
+      const interviewMessages = document.getElementById('interview-messages');
+      const interviewAnswerForm = document.getElementById('interview-answer-form');
+      const interviewAnswerInput = document.getElementById('interview-answer');
+      const submitInterviewAnswerButton = document.getElementById('submit-interview-answer');
+      let interviewQuestions = [];
+      let interviewIndex = 0;
+      let interviewInProgress = false;
       const savedTargetRole = localStorage.getItem('student_target_role');
       if (savedTargetRole) roleInput.value = savedTargetRole;
 
-      roleInput.addEventListener('input', () => localStorage.setItem('student_target_role', roleInput.value.trim()));
+      roleInput.addEventListener('input', () => {
+        localStorage.setItem('student_target_role', roleInput.value.trim());
+        if (interviewQuestions.length) resetInterview();
+      });
       fileInput.addEventListener('change', () => {
         const file = fileInput.files[0];
         document.getElementById('file-name').textContent = file ? file.name : 'PDF, DOCX, or TXT · up to 5 MB';
@@ -245,6 +305,174 @@
         Object.entries(extraFields || {}).forEach(([key, value]) => data.append(key, value));
         return data;
       }
+
+      function appendInterviewMessage(text, kind) {
+        const message = document.createElement('div');
+        message.className = `interview-message ${kind || ''}`.trim();
+        message.textContent = text;
+        interviewMessages.appendChild(message);
+        interviewMessages.scrollTop = interviewMessages.scrollHeight;
+        return message;
+      }
+
+      function setInterviewStatus(text, isError = false) {
+        interviewStatus.className = `interview-status${isError ? ' error' : ''}`;
+        interviewStatus.textContent = text;
+      }
+
+      function validateInterviewInputs() {
+        const file = fileInput.files[0];
+        if (!roleInput.value.trim()) {
+          setInterviewStatus('Choose your target role before starting the mock interview.', true);
+          roleInput.focus();
+          return false;
+        }
+        if (!file && !resumeInput.value.trim()) {
+          setInterviewStatus('Choose a resume file or paste resume text to start.', true);
+          fileInput.focus();
+          return false;
+        }
+        if (file && file.size > 5 * 1024 * 1024) {
+          setInterviewStatus('Resume files must be 5 MB or smaller.', true);
+          return false;
+        }
+        if (!API_BASE) {
+          setInterviewStatus('Mock interviews are not configured for this deployment. Set the FastAPI backend URL in frontend/api-config.js and redeploy the frontend.', true);
+          return false;
+        }
+        return true;
+      }
+
+      function resetInterview() {
+        interviewQuestions = [];
+        interviewIndex = 0;
+        interviewInProgress = false;
+        interviewSession.hidden = true;
+        interviewMessages.replaceChildren();
+        interviewAnswerInput.value = '';
+        interviewAnswerForm.querySelector('label').hidden = false;
+        interviewAnswerInput.hidden = false;
+        submitInterviewAnswerButton.hidden = false;
+        startInterviewButton.hidden = false;
+        startInterviewButton.disabled = false;
+        startInterviewButton.textContent = 'Start mock interview';
+        setInterviewStatus('Resume or target role changed. Start a new interview to use the updated details.');
+      }
+
+      async function startInterview() {
+        if (!validateInterviewInputs()) return;
+        startInterviewButton.disabled = true;
+        startInterviewButton.textContent = 'Preparing questions...';
+        setInterviewStatus('Finding specific projects and experience to ask about...');
+        try {
+          const response = await fetch(`${API_BASE}/student/interview/start`, {
+            method: 'POST',
+            body: requestData()
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.detail || 'The mock interview could not be started.');
+          if (!Array.isArray(data.questions) || data.questions.length === 0) {
+            throw new Error('No interview questions could be created from this resume. Add project or experience details and try again.');
+          }
+          interviewQuestions = data.questions;
+          interviewIndex = 0;
+          interviewInProgress = true;
+          interviewMessages.replaceChildren();
+          interviewSession.hidden = false;
+          interviewAnswerForm.querySelector('label').hidden = false;
+          interviewAnswerInput.hidden = false;
+          submitInterviewAnswerButton.hidden = false;
+          startInterviewButton.hidden = true;
+          setInterviewStatus('Your answers are for practice. Feedback is guidance, not an assessment of hiring potential.');
+          askNextInterviewQuestion();
+          interviewAnswerInput.focus();
+        } catch (error) {
+          setInterviewStatus(error.message.includes('fetch')
+            ? `Could not reach the interview service. Check that the API is available at ${API_BASE}.`
+            : error.message, true);
+          startInterviewButton.disabled = false;
+          startInterviewButton.textContent = 'Start mock interview';
+        }
+      }
+
+      function askNextInterviewQuestion() {
+        interviewProgress.textContent = `Question ${interviewIndex + 1} of ${interviewQuestions.length}`;
+        appendInterviewMessage(interviewQuestions[interviewIndex], 'question');
+        interviewAnswerInput.value = '';
+      }
+
+      startInterviewButton.addEventListener('click', startInterview);
+      document.getElementById('restart-interview').addEventListener('click', () => {
+        interviewSession.hidden = true;
+        interviewQuestions = [];
+        interviewIndex = 0;
+        interviewInProgress = false;
+        interviewMessages.replaceChildren();
+        interviewAnswerInput.value = '';
+        interviewAnswerForm.querySelector('label').hidden = false;
+        interviewAnswerInput.hidden = false;
+        submitInterviewAnswerButton.hidden = false;
+        startInterviewButton.hidden = false;
+        startInterviewButton.disabled = false;
+        startInterviewButton.textContent = 'Start mock interview';
+        setInterviewStatus('Start a fresh set of questions based on your resume.');
+      });
+      fileInput.addEventListener('change', () => {
+        if (interviewQuestions.length) resetInterview();
+      });
+      resumeInput.addEventListener('input', () => {
+        if (interviewInProgress) resetInterview();
+      });
+
+      interviewAnswerForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const answer = interviewAnswerInput.value.trim();
+        if (!answer || !interviewInProgress) return;
+        if (!validateInterviewInputs()) return;
+
+        const question = interviewQuestions[interviewIndex];
+        appendInterviewMessage(answer, 'answer');
+        interviewAnswerInput.value = '';
+        const pending = appendInterviewMessage('Reviewing your answer...', 'pending');
+        submitInterviewAnswerButton.disabled = true;
+        try {
+          const response = await fetch(`${API_BASE}/student/interview/answer`, {
+            method: 'POST',
+            body: requestData({ question, answer })
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.detail || 'Interview feedback is unavailable right now.');
+          pending.remove();
+          const feedback = [
+            'What went well',
+            ...(data.strengths || []).map((item) => `• ${item}`),
+            '',
+            'To strengthen your answer',
+            ...(data.improvements || []).map((item) => `• ${item}`)
+          ].join('\n');
+          appendInterviewMessage(feedback, 'feedback');
+          interviewIndex += 1;
+          if (interviewIndex < interviewQuestions.length) {
+            askNextInterviewQuestion();
+            interviewAnswerInput.focus();
+          } else {
+            interviewInProgress = false;
+            interviewProgress.textContent = 'Interview complete';
+            interviewAnswerForm.querySelector('label').hidden = true;
+            interviewAnswerInput.hidden = true;
+            submitInterviewAnswerButton.hidden = true;
+            setInterviewStatus('You completed the practice interview. Review the feedback above, or start over for another round.');
+          }
+        } catch (error) {
+          pending.remove();
+          appendInterviewMessage(error.message.includes('fetch')
+            ? `Could not reach the interview service. Check that the API is available at ${API_BASE}.`
+            : error.message, 'feedback');
+          interviewAnswerInput.value = answer;
+        } finally {
+          submitInterviewAnswerButton.disabled = false;
+        }
+      });
 
       function renderTerms(containerId, terms, missing) {
         const container = document.getElementById(containerId);

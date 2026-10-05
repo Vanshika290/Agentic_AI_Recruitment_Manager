@@ -11,6 +11,7 @@
         --blue: #1769d2;
         --blue-dark: #1054ac;
         --line: #d9e4f2;
+        --violet: #6258e8;
       }
 
       * { box-sizing: border-box; }
@@ -19,103 +20,336 @@
         min-height: 100vh;
         display: grid;
         place-items: center;
-        padding: 24px;
+        padding: 32px;
         font-family: "Segoe UI", sans-serif;
-        background: #edf4fc;
+        background:
+          radial-gradient(ellipse at 15% 15%, rgba(209, 226, 255, 0.8), transparent 38%),
+          radial-gradient(ellipse at 90% 90%, rgba(224, 219, 255, 0.75), transparent 35%),
+          #f4f7fc;
         color: var(--ink);
       }
 
-      .card {
-        width: min(480px, 100%);
+      .welcome-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(390px, 0.92fr);
+        width: min(1080px, 100%);
+        min-height: 620px;
+        overflow: hidden;
         background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 40px;
-        box-shadow: 0 16px 40px rgba(29, 73, 125, 0.1);
+        border: 1px solid rgba(216, 226, 243, 0.9);
+        border-radius: 28px;
+        box-shadow: 0 30px 90px rgba(38, 61, 111, 0.15), 0 3px 12px rgba(38, 61, 111, 0.05);
       }
 
+      .hero-panel {
+        position: relative;
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        padding: 42px 44px 34px;
+        background:
+          radial-gradient(ellipse at 64% 47%, rgba(255, 255, 255, 0.95), transparent 40%),
+          linear-gradient(145deg, #edf3ff 0%, #f3f0ff 56%, #e2eeff 100%);
+      }
+
+      .hero-panel::before,
+      .hero-panel::after {
+        position: absolute;
+        width: 260px;
+        height: 260px;
+        border: 1px solid rgba(104, 130, 234, 0.12);
+        border-radius: 50%;
+        content: "";
+        pointer-events: none;
+      }
+      .hero-panel::before { top: 23%; left: 24%; }
+      .hero-panel::after { top: 18%; left: 19%; width: 310px; height: 310px; }
+
+      .brand {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.98rem;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+      }
       .brand-mark {
         display: grid;
-        place-items: center;
         width: 42px;
         height: 42px;
-        margin-bottom: 28px;
-        border-radius: 8px;
-        background: #e7f1ff;
-        color: var(--blue);
-        font-size: 0.9rem;
-        font-weight: 750;
+        place-items: center;
+        border: 1px solid rgba(98, 88, 232, 0.12);
+        border-radius: 14px;
+        background: linear-gradient(145deg, #fff, #e7eaff);
+        box-shadow: 0 6px 16px rgba(79, 91, 198, 0.12);
+        color: var(--violet);
+        font-size: 0.83rem;
+        font-weight: 800;
       }
-      h1 { margin: 0 0 10px; font-family: Georgia, serif; font-size: 2rem; }
-      p { color: var(--muted); margin: 0 0 26px; line-height: 1.6; }
+      .hero-copy { position: relative; z-index: 1; margin-top: 22px; }
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--violet);
+        font-size: 0.76rem;
+        font-weight: 750;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      h1 { max-width: 430px; margin: 0; font-size: clamp(2rem, 3.7vw, 3rem); line-height: 1.08; letter-spacing: -0.055em; }
+      .hero-copy p { max-width: 390px; margin: 16px 0 0; color: var(--muted); line-height: 1.65; }
+
+      .robot-stage {
+        position: relative;
+        display: grid;
+        min-height: 290px;
+        flex: 1;
+        place-items: center;
+        margin: 2px -8px 0;
+        perspective: 900px;
+      }
+      .robot-art {
+        position: relative;
+        z-index: 1;
+        width: min(290px, 72%);
+        overflow: visible;
+        filter: drop-shadow(0 25px 18px rgba(70, 80, 163, 0.18));
+        animation: robot-float 5s ease-in-out infinite;
+        transform-origin: 50% 80%;
+      }
+      .robot-shadow {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        width: 200px;
+        height: 25px;
+        border-radius: 50%;
+        background: rgba(91, 101, 177, 0.16);
+        filter: blur(11px);
+        transform: translateX(-50%);
+      }
+      .orbit-chip {
+        position: absolute;
+        z-index: 2;
+        display: grid;
+        width: 54px;
+        height: 54px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 12px 28px rgba(77, 94, 169, 0.14);
+        color: var(--violet);
+        font-size: 1.35rem;
+        backdrop-filter: blur(8px);
+      }
+      .orbit-chip.people { top: 16%; left: 14%; transform: rotate(-9deg); }
+      .orbit-chip.spark { top: 24%; right: 13%; color: #e99843; transform: rotate(9deg); }
+      .orbit-chip.check { right: 17%; bottom: 18%; color: #28a77a; transform: rotate(7deg); }
+      .hero-note {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #657694;
+        font-size: 0.82rem;
+      }
+      .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #42bf91; box-shadow: 0 0 0 4px rgba(66, 191, 145, 0.12); }
+
+      .form-panel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 46px clamp(30px, 5vw, 62px);
+      }
+      .form-content { width: min(100%, 390px); }
+      .form-content h2 { margin: 0 0 8px; font-size: 1.55rem; letter-spacing: -0.035em; }
+      .intro { margin: 0 0 30px; color: var(--muted); font-size: 0.94rem; line-height: 1.55; }
       label { display: block; margin-bottom: 8px; font-size: 0.9rem; font-weight: 650; }
       .name-input {
         width: 100%;
         background: #fff;
         color: var(--ink);
-        border: 1px solid #b9cbe0;
-        border-radius: 8px;
+        border: 1px solid #d4deed;
+        border-radius: 12px;
         font-size: 1rem;
-        padding: 13px 14px;
-        margin-bottom: 16px;
+        padding: 14px 15px;
+        margin-bottom: 14px;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
       }
 
-      .name-input:focus { outline: 3px solid #c8e0ff; border-color: var(--blue); }
-      fieldset { margin: 20px 0 16px; padding: 0; border: 0; }
-      legend { margin-bottom: 9px; font-size: 0.9rem; font-weight: 650; }
+      .name-input:focus { outline: none; border-color: #7b79f2; box-shadow: 0 0 0 4px rgba(98, 88, 232, 0.12); }
+      fieldset { margin: 22px 0 22px; padding: 0; border: 0; }
+      legend { margin-bottom: 10px; font-size: 0.9rem; font-weight: 700; }
       .role-option {
         display: flex;
-        gap: 11px;
-        align-items: flex-start;
-        padding: 12px 13px;
-        margin-top: 8px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
+        margin-top: 9px;
+        border: 1px solid #e0e6f1;
+        border-radius: 13px;
         cursor: pointer;
+        transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
       }
-      .role-option:has(input:checked) { border-color: var(--blue); background: #f2f7ff; }
-      .role-option input { margin: 3px 0 0; accent-color: var(--blue); }
+      .role-option:hover { border-color: #b8b9fa; transform: translateY(-1px); }
+      .role-option:has(input:checked) { border-color: #8580f2; background: #f7f6ff; box-shadow: 0 0 0 3px rgba(98, 88, 232, 0.08); }
+      .role-option input { width: 17px; height: 17px; flex: 0 0 auto; margin: 0; accent-color: var(--violet); }
       .role-copy { display: grid; gap: 3px; }
       .role-copy strong { font-size: 0.93rem; }
       .role-copy small { color: var(--muted); font-size: 0.82rem; line-height: 1.4; }
       .continue-btn {
         width: 100%;
-        background: var(--blue);
+        background: linear-gradient(110deg, #6258e8, #446fe5);
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 12px;
         font-size: 1rem;
         font-weight: 600;
-        padding: 13px 18px;
+        padding: 14px 18px;
         cursor: pointer;
-        transition: background 0.15s ease, transform 0.15s ease;
+        box-shadow: 0 9px 20px rgba(91, 87, 220, 0.2);
+        transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
       }
 
-      .continue-btn:hover { background: var(--blue-dark); transform: translateY(-1px); }
-      @media (max-width: 480px) { .card { padding: 28px 22px; } }
+      .continue-btn:hover { filter: brightness(1.06); box-shadow: 0 12px 24px rgba(91, 87, 220, 0.26); transform: translateY(-1px); }
+      .continue-btn:focus-visible, .role-option:focus-within { outline: 3px solid rgba(98, 88, 232, 0.25); outline-offset: 2px; }
+      @keyframes robot-float {
+        0%, 100% { transform: translateY(0) rotateY(-5deg); }
+        50% { transform: translateY(-9px) rotateY(5deg); }
+      }
+      @media (max-width: 760px) {
+        body { padding: 18px; }
+        .welcome-shell { grid-template-columns: 1fr; width: min(520px, 100%); min-height: auto; border-radius: 24px; }
+        .hero-panel { padding: 26px 28px 12px; }
+        .hero-copy { margin-top: 27px; }
+        .hero-copy h1 { font-size: 2.25rem; }
+        .hero-copy p { margin-top: 10px; }
+        .robot-stage { min-height: 220px; margin-top: -2px; }
+        .robot-art { width: min(225px, 60%); }
+        .robot-shadow { bottom: 10px; width: 155px; }
+        .orbit-chip { width: 46px; height: 46px; border-radius: 15px; }
+        .orbit-chip.people { left: 17%; }
+        .orbit-chip.spark { right: 15%; }
+        .orbit-chip.check { right: 19%; bottom: 14%; }
+        .hero-note { margin-top: 0; }
+        .form-panel { padding: 28px; }
+        .intro { margin-bottom: 24px; }
+      }
+      @media (max-width: 420px) {
+        body { padding: 10px; }
+        .hero-panel { padding: 22px 21px 10px; }
+        .form-panel { padding: 25px 21px; }
+        .hero-copy h1 { font-size: 1.95rem; }
+        .robot-stage { min-height: 190px; }
+        .orbit-chip.people { left: 10%; }
+        .orbit-chip.spark { right: 8%; }
+        .orbit-chip.check { right: 12%; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      }
     </style>
   </head>
   <body>
-    <main class="card">
-      <div class="brand-mark" aria-hidden="true">RM</div>
-      <h1>Recruitment Manager</h1>
-      <p>Let’s find the people who move great teams forward.</p>
-      <form id="name-form">
-        <label for="user-name">What should we call you?</label>
-        <input id="user-name" class="name-input" name="name" type="text" autocomplete="name" maxlength="60" required />
-        <fieldset>
-          <legend>Which best describes you?</legend>
-          <label class="role-option">
-            <input type="radio" name="profession" value="hr" required />
-            <span class="role-copy"><strong>I'm part of an HR team</strong><small>Find and compare candidates for a job description.</small></span>
-          </label>
-          <label class="role-option">
-            <input type="radio" name="profession" value="student" required />
-            <span class="role-copy"><strong>I'm a student or job seeker</strong><small>Check your resume and get guidance for your target role.</small></span>
-          </label>
-        </fieldset>
-        <button class="continue-btn" type="submit">Continue</button>
-      </form>
+    <main class="welcome-shell">
+      <section class="hero-panel" aria-label="Welcome to Recruitment Manager">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">RM</div>
+          <span>Recruitment Manager</span>
+        </div>
+        <div class="hero-copy">
+          <p class="eyebrow">Your AI-powered hiring companion</p>
+          <h1>Great matches start with a warm hello.</h1>
+          <p>Tell us a little about yourself. Your recruiting assistant is ready to help you take the next step.</p>
+        </div>
+        <div class="robot-stage" aria-hidden="true">
+          <span class="orbit-chip people">♙</span>
+          <span class="orbit-chip spark">✦</span>
+          <span class="orbit-chip check">✓</span>
+          <div class="robot-shadow"></div>
+          <svg class="robot-art" viewBox="0 0 300 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="headFront" x1="76" y1="78" x2="220" y2="201" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#fff"/><stop offset=".56" stop-color="#F2F4FF"/><stop offset="1" stop-color="#CCD5FF"/>
+              </linearGradient>
+              <linearGradient id="headSide" x1="209" y1="102" x2="248" y2="181" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#B7C3FF"/><stop offset="1" stop-color="#7A8AE8"/>
+              </linearGradient>
+              <linearGradient id="bodyFront" x1="92" y1="207" x2="220" y2="300" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#E9EDFF"/><stop offset=".56" stop-color="#C9D3FF"/><stop offset="1" stop-color="#A8B8F5"/>
+              </linearGradient>
+              <linearGradient id="bodySide" x1="207" y1="222" x2="238" y2="286" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#98A8F1"/><stop offset="1" stop-color="#6C7CD8"/>
+              </linearGradient>
+              <linearGradient id="visor" x1="94" y1="111" x2="209" y2="174" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#293A79"/><stop offset=".52" stop-color="#354A9B"/><stop offset="1" stop-color="#202C63"/>
+              </linearGradient>
+              <linearGradient id="shine" x1="94" y1="98" x2="196" y2="187" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+              </linearGradient>
+              <filter id="softGlow" x="0" y="0" width="300" height="320" filterUnits="userSpaceOnUse">
+                <feGaussianBlur stdDeviation="9"/>
+              </filter>
+            </defs>
+            <ellipse cx="153" cy="279" rx="76" ry="19" fill="#7C87DC" fill-opacity=".15" filter="url(#softGlow)"/>
+            <path d="M149 47V31" stroke="#7E8BE7" stroke-width="8" stroke-linecap="round"/>
+            <circle cx="149" cy="24" r="12" fill="#FFB961"/>
+            <circle cx="145" cy="20" r="4" fill="#FFE6B9"/>
+            <path d="M69 122c-13 0-23 10-23 23v23c0 13 10 23 23 23h10v-69H69Z" fill="#8393E9"/>
+            <path d="M226 122c13 0 23 10 23 23v23c0 13-10 23-23 23h-10v-69h10Z" fill="url(#headSide)"/>
+            <path d="M87 72c0-18 15-33 33-33h57c18 0 33 15 33 33v101c0 20-16 36-36 36h-51c-20 0-36-16-36-36V72Z" fill="url(#headSide)"/>
+            <path d="M69 75c0-19 15-34 34-34h79c19 0 34 15 34 34v94c0 20-16 36-36 36h-75c-20 0-36-16-36-36V75Z" fill="url(#headFront)" stroke="#fff" stroke-width="4"/>
+            <path d="M80 76c0-13 10-23 23-23h68c13 0 23 10 23 23v15H80V76Z" fill="url(#shine)" opacity=".65"/>
+            <rect x="82" y="96" width="113" height="74" rx="28" fill="url(#visor)"/>
+            <path d="M95 112c8-8 18-12 29-12" stroke="#8797EF" stroke-opacity=".65" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="113" cy="132" r="8" fill="#8DE6FF"/>
+            <circle cx="113" cy="132" r="3" fill="#fff"/>
+            <circle cx="164" cy="132" r="8" fill="#8DE6FF"/>
+            <circle cx="164" cy="132" r="3" fill="#fff"/>
+            <path d="M125 151c8 7 19 7 27 0" stroke="#A9F0FF" stroke-width="4" stroke-linecap="round"/>
+            <path d="M88 193c0-12 10-22 22-22h77c20 0 36 16 36 36v45c0 16-13 29-29 29h-77c-16 0-29-13-29-29v-59Z" fill="url(#bodySide)"/>
+            <path d="M64 213c0-15 12-27 27-27h82c22 0 39 17 39 39v37c0 18-14 32-32 32H96c-18 0-32-14-32-32v-49Z" fill="url(#bodyFront)" stroke="#fff" stroke-width="4"/>
+            <path d="M104 218c0-5 4-9 9-9h39c5 0 9 4 9 9v25c0 5-4 9-9 9h-39c-5 0-9-4-9-9v-25Z" fill="#F8F9FF" stroke="#BAC5FA" stroke-width="3"/>
+            <path d="M116 225h31M116 235h20" stroke="#7B88DB" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="179" cy="221" r="5" fill="#58C9A3"/>
+            <path d="M84 282v18c0 6 5 11 11 11h23c6 0 11-5 11-11v-8" fill="#8898E9"/>
+            <path d="M163 292v8c0 6 5 11 11 11h23c6 0 11-5 11-11v-18" fill="#7183DD"/>
+            <path d="M72 223H53c-9 0-16 7-16 16v15c0 9 7 16 16 16h11" stroke="#9DABF3" stroke-width="13" stroke-linecap="round"/>
+            <circle cx="48" cy="268" r="13" fill="#F2F4FF" stroke="#9DABF3" stroke-width="6"/>
+            <path d="M207 224h17c9 0 16 7 16 16v15c0 9-7 16-16 16h-10" stroke="#8192E6" stroke-width="13" stroke-linecap="round"/>
+            <circle cx="235" cy="268" r="13" fill="#E9EDFF" stroke="#8192E6" stroke-width="6"/>
+            <path d="m52 72 4 9 9 4-9 4-4 9-4-9-9-4 9-4 4-9ZM235 83l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7ZM250 190l3 6 6 3-6 3-3 6-3-6-6-3 6-3 3-6Z" fill="#A69BFF"/>
+          </svg>
+        </div>
+        <div class="hero-note"><span class="status-dot"></span> A smarter, more human way to get started</div>
+      </section>
+      <section class="form-panel" aria-labelledby="welcome-heading">
+        <div class="form-content">
+          <h2 id="welcome-heading">Let’s get to know you</h2>
+          <p class="intro">A couple of details will help us tailor your experience.</p>
+          <form id="name-form">
+            <label for="user-name">What should we call you?</label>
+            <input id="user-name" class="name-input" name="name" type="text" autocomplete="name" maxlength="60" placeholder="Enter your name" required />
+            <fieldset>
+              <legend>Which best describes you?</legend>
+              <label class="role-option">
+                <input type="radio" name="profession" value="hr" required />
+                <span class="role-copy"><strong>I'm part of an HR team</strong><small>Find and compare candidates for a job description.</small></span>
+              </label>
+              <label class="role-option">
+                <input type="radio" name="profession" value="student" required />
+                <span class="role-copy"><strong>I'm a student or job seeker</strong><small>Check your resume and get guidance for your target role.</small></span>
+              </label>
+            </fieldset>
+            <button class="continue-btn" type="submit">Continue <span aria-hidden="true">→</span></button>
+          </form>
+        </div>
+      </section>
     </main>
 
     <script>

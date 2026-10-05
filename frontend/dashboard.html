@@ -72,6 +72,22 @@
       select { height: 40px; padding: 0 10px; }
       textarea::placeholder { color: #a3adbb; }
       textarea:focus, select:focus { outline: 3px solid #e6eaff; border-color: #9cacf8; }
+      .jd-generator { margin-bottom: 16px; border: 1px solid #e4e8f5; border-radius: 8px; background: #fafbff; }
+      .jd-generator summary { display: flex; min-height: 43px; align-items: center; gap: 8px; padding: 0 12px; color: #394b70; font-size: .76rem; font-weight: 700; cursor: pointer; list-style: none; }
+      .jd-generator summary::-webkit-details-marker { display: none; }
+      .jd-generator summary::before { content: "✦"; color: var(--blue); font-size: .9rem; }
+      .jd-generator[open] summary { border-bottom: 1px solid #e9ecf5; }
+      .generator-hint { margin-left: auto; color: #8792a5; font-size: .66rem; font-weight: 500; }
+      .generator-fields { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(0, 1.3fr); gap: 10px; padding: 13px; }
+      .generator-fields label { margin-bottom: 6px; }
+      .generator-fields input, .generator-fields textarea { width: 100%; border: 1px solid #dfe4eb; border-radius: 7px; background: #fff; color: var(--ink); font: inherit; font-size: .75rem; }
+      .generator-fields input { height: 38px; padding: 0 10px; }
+      .generator-fields textarea { min-height: 64px; padding: 9px 10px; resize: vertical; }
+      .generator-fields input:focus, .generator-fields textarea:focus { outline: 3px solid #e6eaff; border-color: #9cacf8; }
+      .generator-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; }
+      .generate-button { min-height: 35px; padding: 0 12px; border: 0; border-radius: 6px; background: #eef1ff; color: #4058c8; font-size: .72rem; font-weight: 700; cursor: pointer; }
+      .generate-button:hover { background: #e2e7ff; }
+      .generator-status { color: #64738d; font-size: .69rem; line-height: 1.4; }
       .search-button { min-height: 40px; padding: 0 15px; border: 0; border-radius: 7px; background: var(--blue); color: #fff; font-size: .76rem; font-weight: 650; cursor: pointer; white-space: nowrap; transition: background .15s ease; }
       .search-button:hover { background: var(--blue-dark); }
       .search-button:disabled { opacity: .65; cursor: wait; }
@@ -139,6 +155,9 @@
         .side-stack { grid-template-columns: 1fr; gap: 13px; }
         .panel-header { padding: 16px; }
         .panel-body { padding: 15px 16px 17px; }
+        .generator-fields { grid-template-columns: 1fr; }
+        .generator-actions { grid-column: auto; align-items: flex-start; flex-direction: column; }
+        .generator-hint { font-size: .61rem; }
         .search-form { grid-template-columns: minmax(0, 1fr) 105px; }
         .query-field { grid-column: 1 / -1; }
         .search-button { width: 100%; }
@@ -228,6 +247,23 @@
                   </div>
                 </div>
                 <div class="panel-body">
+                  <details class="jd-generator">
+                    <summary>Draft a job description from your notes<span class="generator-hint">Editable · generated in your browser</span></summary>
+                    <div class="generator-fields">
+                      <div>
+                        <label for="generator-title">Job title</label>
+                        <input id="generator-title" type="text" maxlength="120" placeholder="e.g., Backend Engineer" />
+                      </div>
+                      <div>
+                        <label for="generator-points">Key points <span aria-hidden="true">(one per line)</span></label>
+                        <textarea id="generator-points" maxlength="3000" placeholder="Build and maintain Python APIs&#10;Work with FastAPI and PostgreSQL&#10;Collaborate with product and frontend teams"></textarea>
+                      </div>
+                      <div class="generator-actions">
+                        <button id="generate-description" class="generate-button" type="button">✦ Generate description</button>
+                        <span id="generator-status" class="generator-status" role="status" aria-live="polite"></span>
+                      </div>
+                    </div>
+                  </details>
                   <form id="search-form" class="search-form">
                     <div class="query-field">
                       <label for="job-description">Job description</label>
@@ -303,6 +339,44 @@
       const statusStat = document.getElementById('stat-status');
       const statusHint = document.getElementById('stat-status-hint');
       const resultsDescription = document.getElementById('results-description');
+      const jobDescription = document.getElementById('job-description');
+      const generatorTitle = document.getElementById('generator-title');
+      const generatorPoints = document.getElementById('generator-points');
+      const generatorStatus = document.getElementById('generator-status');
+
+      document.getElementById('generate-description').addEventListener('click', () => {
+        const title = generatorTitle.value.trim();
+        const points = generatorPoints.value
+          .split(/\n|;/)
+          .map((point) => point.replace(/^\s*[-*•]\s*/, '').trim())
+          .filter(Boolean);
+
+        if (!title) {
+          generatorStatus.textContent = 'Add a job title to draft the description.';
+          generatorTitle.focus();
+          return;
+        }
+        if (!points.length) {
+          generatorStatus.textContent = 'Add at least one key point, then try again.';
+          generatorPoints.focus();
+          return;
+        }
+
+        const titleForSentence = title.replace(/[.!?]+$/, '');
+        const bulletPoints = points.slice(0, 20).map((point) => `• ${point}`).join('\n');
+        jobDescription.value = [
+          `${title}`,
+          '',
+          'Role overview',
+          `We are looking for a ${titleForSentence} to join our team. In this role, you will contribute to meaningful projects and collaborate with colleagues to deliver high-quality work.`,
+          '',
+          'Key responsibilities and requirements',
+          bulletPoints
+        ].join('\n');
+        jobDescription.dispatchEvent(new Event('input', { bubbles: true }));
+        generatorStatus.textContent = `Draft added to the job description (${Math.min(points.length, 20)} key points). Review and edit it before searching.`;
+        jobDescription.focus();
+      });
 
       function setSearchStatus(status, hint) {
         statusStat.textContent = status;
@@ -492,7 +566,7 @@
 
       searchForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        const query = document.getElementById('job-description').value.trim();
+        const query = jobDescription.value.trim();
         if (query) searchCandidates(query);
       });
     </script>

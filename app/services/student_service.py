@@ -35,6 +35,28 @@ SECTION_PATTERNS = {
     "skills": r"\b(skills|technical skills|core competencies)\b",
     "projects": r"\b(projects|selected projects|portfolio)\b",
 }
+INTERVIEW_QUESTION_ANGLES = (
+    "What was your specific contribution, and how did you approach the work?",
+    "What was the most challenging part, and how did you work through it?",
+    "How did you decide what to do, and what alternatives did you consider?",
+    "What impact did your work have, and how did you measure the result?",
+    "What did you learn, and what would you do differently next time?",
+)
+RESUME_SECTION_HEADINGS = {
+    "education", "experience", "employment", "work experience", "work history",
+    "professional experience", "projects", "skills", "technical skills",
+    "certifications", "summary", "profile", "contact", "references",
+}
+ANSWER_ACTION_PATTERN = re.compile(
+    r"\b(i|led|built|created|developed|designed|implemented|improved|analyzed|"
+    r"automated|organized|coordinated|tested|delivered|owned|solved)\b",
+    re.IGNORECASE,
+)
+ANSWER_OUTCOME_PATTERN = re.compile(
+    r"\b(result|impact|improved|increased|reduced|saved|launched|delivered|"
+    r"measured|percent|percentage|users|faster|accuracy)\b|\b\d+(?:\.\d+)?%?\b",
+    re.IGNORECASE,
+)
 
 
 def extract_resume_text(filename: str, contents: bytes) -> str:
@@ -86,6 +108,100 @@ def _job_keywords(job_description: str) -> list[str]:
 def _contains_term(text: str, term: str) -> bool:
     escaped = re.escape(term.lower()).replace(r"\ ", r"\s+")
     return re.search(rf"(?<![a-z0-9]){escaped}(?![a-z0-9])", text.lower()) is not None
+
+
+def generate_interview_questions(resume_text: str, role: str) -> dict[str, Any]:
+    resume = (resume_text or "").strip()
+    target_role = (role or "").strip()
+    if not resume:
+        raise ValueError("Upload a resume or paste resume text to start a mock interview.")
+    if len(resume) > MAX_RESUME_CHARACTERS:
+        raise ValueError("Resume text must be 30,000 characters or fewer.")
+    if not target_role:
+        raise ValueError("Choose your target role before starting a mock interview.")
+
+    facts = []
+    for line in resume.splitlines():
+        fact = re.sub(r"^\s*(?:[-*•▪◦]|\d+[.)])\s*", "", line).strip()
+        normalized = re.sub(r"[^a-z]+", " ", fact.lower()).strip()
+        if (
+            len(fact.split()) >= 4
+            and len(fact) <= 240
+            and normalized not in RESUME_SECTION_HEADINGS
+            and not re.search(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b", fact)
+            and not re.search(r"(?:\+?\d[\d(). -]{7,}\d)", fact)
+        ):
+            facts.append(fact)
+
+    if not facts:
+        sentences = re.split(r"(?<=[.!?])\s+", resume)
+        facts = [sentence.strip() for sentence in sentences if len(sentence.split()) >= 4][:20]
+    if not facts:
+        raise ValueError("Add a project or experience description to your resume before starting.")
+
+    questions = []
+    for index, angle in enumerate(INTERVIEW_QUESTION_ANGLES):
+        fact = facts[index % len(facts)]
+        questions.append(
+            f"Your resume mentions: “{fact}” Tell me about this experience. {angle}"
+        )
+
+    return {"role": target_role, "questions": questions, "total_questions": len(questions)}
+
+
+def evaluate_interview_answer(question: str, answer: str, resume_text: str) -> dict[str, Any]:
+    prompt = (question or "").strip()
+    response = (answer or "").strip()
+    resume = (resume_text or "").strip()
+    if not prompt:
+        raise ValueError("The interview question is missing. Start a new mock interview.")
+    if not response:
+        raise ValueError("Write an answer before asking for feedback.")
+    if len(response) > 5000:
+        raise ValueError("Interview answers must be 5,000 characters or fewer.")
+    if not resume:
+        raise ValueError("Upload your resume or paste its text to get interview feedback.")
+    if len(resume) > MAX_RESUME_CHARACTERS:
+        raise ValueError("Resume text must be 30,000 characters or fewer.")
+
+    words = response.split()
+    strengths = []
+    improvements = []
+    if len(words) >= 25:
+        strengths.append("You gave enough detail to build on.")
+    else:
+        improvements.append("Add a little more detail about the situation and your specific task.")
+    if ANSWER_ACTION_PATTERN.search(response):
+        strengths.append("You described actions or ownership.")
+    else:
+        improvements.append("Make your personal contribution clear by explaining what you did.")
+    if ANSWER_OUTCOME_PATTERN.search(response):
+        strengths.append("You included an outcome or impact.")
+    else:
+        improvements.append("Finish with the result, impact, or lesson; use numbers when you can support them.")
+
+    topic_terms = {
+        word.lower()
+        for word in re.findall(r"[A-Za-z][A-Za-z0-9+#.-]{2,}", prompt)
+        if word.lower() not in STOP_WORDS
+    }
+    answer_terms = {
+        word.lower()
+        for word in re.findall(r"[A-Za-z][A-Za-z0-9+#.-]{2,}", response)
+    }
+    resume_terms = {
+        word.lower()
+        for word in re.findall(r"[A-Za-z][A-Za-z0-9+#.-]{2,}", resume)
+    }
+    if topic_terms & answer_terms:
+        strengths.append("Your answer stayed connected to the resume example in the question.")
+    elif topic_terms & resume_terms:
+        improvements.append("Tie your explanation back to the specific project or experience named in the question.")
+
+    if not improvements:
+        improvements.append("Keep the story concise and be ready to explain any technical or project details you mention.")
+
+    return {"strengths": strengths, "improvements": improvements}
 
 
 def analyze_resume(resume_text: str, role: str, job_description: str = "") -> dict[str, Any]:
